@@ -8,9 +8,11 @@ interface RealtimeParams {
   onInsert?: (newGroup: GameGroup) => void;
   onUpdate?: (updatedGroup: GameGroup) => void;
   onDelete?: (deletedGroupId: string) => void;
+
+  onMemberChange?: () => void;
 }
 
-export function useRealtime({ onInsert, onUpdate, onDelete }: RealtimeParams) {
+export function useRealtime({ onInsert, onUpdate, onDelete, onMemberChange}: RealtimeParams) {
   const supabase = createClient();
 
   useEffect(() => {
@@ -84,10 +86,24 @@ export function useRealtime({ onInsert, onUpdate, onDelete }: RealtimeParams) {
           }
         }
       )
+      .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'group_members',
+          },
+          (payload) => {
+            console.log('GROUP MEMBER EVENT');
+            console.log(payload);
+
+            onMemberChange?.();
+          }
+        )
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [supabase, onInsert, onUpdate, onDelete]);
+  }, [supabase, onInsert, onUpdate, onDelete,onMemberChange]);
 }

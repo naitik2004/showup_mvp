@@ -23,6 +23,10 @@ const MapView = dynamic(() => import('@/components/map/MapView'), {
   ),
 });
 
+const refreshGroups = async () => {
+  window.location.reload();
+};
+
 export default function MapPage() {
   const { sessionUser } = useAuth();
   const { coords, permissionDenied, requestLocation } = useMap();
@@ -33,6 +37,7 @@ export default function MapPage() {
 
   // Initialize Supabase Realtime subscriptions
   useRealtime({
+    onMemberChange: refreshGroups,
     onInsert: (newGroup) => {
       setGroups((prev) => {
         // Prevent duplicate pins
