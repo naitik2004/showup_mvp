@@ -27,7 +27,7 @@ export function useRealtime({ onInsert, onUpdate, onDelete }: RealtimeParams) {
               .from('users')
               .select('name')
               .eq('id', payload.new.host_id)
-              .single();
+              .maybeSingle();
 
             // Extract lat/lng coordinates from geography point (Well-Known Text or GeoJSON Point format)
             let coords = { lat: 0, lng: 0 };
