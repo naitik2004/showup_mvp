@@ -1,0 +1,190 @@
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+@layer base {
+  :root {
+    --background: 240 10% 4%; /* #0A0A0B */
+    --foreground: 40 25% 94%; /* #F5F0E8 (Cream) */
+    --card: 240 6% 10%; /* #1A1A1D */
+    --card-foreground: 40 25% 94%;
+    --popover: 240 6% 10%;
+    --popover-foreground: 40 25% 94%;
+    --primary: 66 100% 64%; /* #E8FF47 (Electric Lime) */
+    --primary-foreground: 240 10% 4%;
+    --secondary: 240 5% 18%; /* #2A2A2E */
+    --secondary-foreground: 40 25% 94%;
+    --muted: 240 5% 15%;
+    --muted-foreground: 240 5% 65%;
+    --accent: 66 100% 64%;
+    --accent-foreground: 240 10% 4%;
+    --destructive: 0 84% 60%;
+    --border: 240 5% 18%;
+    --input: 240 5% 18%;
+    --ring: 66 100% 64%;
+    --radius: 1rem;
+  }
+
+  .dark {
+    /* Same as root because ShowUp is dark by default */
+    --background: 240 10% 4%;
+    --foreground: 40 25% 94%;
+    --card: 240 6% 10%;
+    --card-foreground: 40 25% 94%;
+    --popover: 240 6% 10%;
+    --popover-foreground: 40 25% 94%;
+    --primary: 66 100% 64%;
+    --primary-foreground: 240 10% 4%;
+    --secondary: 240 5% 18%;
+    --secondary-foreground: 40 25% 94%;
+    --muted: 240 5% 15%;
+    --muted-foreground: 240 5% 65%;
+    --accent: 66 100% 64%;
+    --accent-foreground: 240 10% 4%;
+    --destructive: 0 84% 60%;
+    --border: 240 5% 18%;
+    --input: 240 5% 18%;
+    --ring: 66 100% 64%;
+  }
+
+  * {
+    @apply border-border outline-ring/50;
+  }
+  
+  body {
+    @apply bg-background text-foreground antialiased selection:bg-primary selection:text-primary-foreground overflow-x-hidden;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  /* Custom scrollbar for horizontal chips */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(232, 255, 71, 0.1);
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(232, 255, 71, 0.25);
+  }
+}
+
+/* Animations & Keyframes */
+@keyframes float {
+  0% {
+    transform: translateY(0px) scale(1);
+  }
+  50% {
+    transform: translateY(-6px) scale(1.02);
+  }
+  100% {
+    transform: translateY(0px) scale(1);
+  }
+}
+
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.35);
+    opacity: 1;
+  }
+  80%, 100% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}
+
+@keyframes pulse-dot {
+  0% {
+    transform: scale(0.8);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(0.8);
+  }
+}
+
+@keyframes gradient-bg {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-pulse-ring {
+  animation: pulse-ring 2s cubic-bezier(0.215, 0.610, 0.355, 1) infinite;
+}
+
+.animate-pulse-dot {
+  animation: pulse-dot 2s cubic-bezier(0.455, 0.030, 0.515, 0.955) infinite;
+}
+
+.animate-gradient-bg {
+  background-size: 200% 200%;
+  animation: gradient-bg 15s ease infinite;
+}
+
+/* Leaflet Overrides */
+.leaflet-container {
+  background-color: #0A0A0B !important;
+  font-family: inherit;
+}
+
+.leaflet-control-zoom {
+  border: none !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5) !important;
+  border-radius: 8px !important;
+  overflow: hidden;
+}
+
+.leaflet-control-zoom-in,
+.leaflet-control-zoom-out {
+  background-color: #1A1A1D !important;
+  color: #F5F0E8 !important;
+  border: 1px solid #2A2A2E !important;
+}
+
+.leaflet-control-zoom-in:hover,
+.leaflet-control-zoom-out:hover {
+  background-color: #2A2A2E !important;
+  color: #E8FF47 !important;
+}
+
+.leaflet-bar a.leaflet-disabled {
+  background-color: #0A0A0B !important;
+  color: #555555 !important;
+}
+
+.leaflet-control-attribution {
+  background: rgba(10, 10, 11, 0.8) !important;
+  color: rgba(245, 240, 232, 0.4) !important;
+  backdrop-filter: blur(4px);
+  border-radius: 4px;
+  font-size: 9px !important;
+}
+
+.leaflet-control-attribution a {
+  color: #E8FF47 !important;
+}
