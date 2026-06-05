@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+
 import { useParams, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { GameGroup, GroupMember, SPORTS } from '@/types';
@@ -10,6 +11,7 @@ import { Calendar, MapPin, Users, ArrowLeft, Send, CheckCircle, MessageSquare } 
 import { toast } from 'sonner';
 import { useGroupChat } from '@/lib/hooks/useGroupChat';
 
+import { usePresence } from '@/lib/hooks/usePresence';
 
 
 
@@ -25,8 +27,10 @@ export default function GroupDetailPage() {
   const [loading, setLoading] = useState(true);
   const [chatMessage, setChatMessage] = useState('');
   const [currentUserId, setCurrentUserId] = useState('');
+  const [currentUserName, setCurrentUserName] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { messages, sendMessage } = useGroupChat(groupId);
+  const {onlineCount,typingUsers,setTyping,stopTyping} = usePresence(groupId, currentUserName);
   
   useEffect(() => {
     messagesEndRef.current?.scrollTo({
@@ -43,6 +47,14 @@ export default function GroupDetailPage() {
       const {data: { user },} = await supabase.auth.getUser();
 
       setCurrentUserId(user?.id || '');
+
+      const { data: profile } = await supabase
+      .from('users')
+      .select('name')
+      .eq('id', user?.id)
+      .single();
+
+      setCurrentUserName(profile?.name || 'Player');
       setLoading(true);
 
       try {
@@ -247,6 +259,7 @@ export default function GroupDetailPage() {
       }
 
       setChatMessage('');
+      await stopTyping();
     };
 
 
@@ -398,9 +411,15 @@ export default function GroupDetailPage() {
 
         <div className="p-4 bg-surface border-b border-muted flex items-center gap-2">
           <MessageSquare className="w-5 h-5 text-primary" />
-          <h3 className="font-heading font-extrabold text-cream">
-            Group Chat
-          </h3>
+          <div>
+            <h3 className="font-heading font-extrabold text-cream">
+              Group Chat
+            </h3>
+
+            <p className="text-xs text-muted-foreground">
+              🟢 {onlineCount} online
+            </p>
+          </div>
         </div>
 
         <div ref={messagesEndRef} className="flex-1 min-h-0 p-4 overflow-y-auto space-y-3">
@@ -460,6 +479,12 @@ export default function GroupDetailPage() {
 
         </div>
 
+        {typingUsers.length > 0 && (
+          <div className="px-4 py-2 text-xs text-primary">
+            ⌨ {typingUsers[0]} is typing...
+          </div>
+        )}
+
         <form
           onSubmit={handleSendMessage}
           className="p-3 bg-surface border-t border-muted flex gap-2"
@@ -468,7 +493,13 @@ export default function GroupDetailPage() {
             type="text"
             placeholder="Send message..."
             value={chatMessage}
-            onChange={(e) => setChatMessage(e.target.value)}
+
+
+            onChange={(e) => {
+              setChatMessage(e.target.value);
+              setTyping();
+            }}
+            
             className="flex-1 bg-black/40 border border-muted text-cream px-3 py-2 rounded-xl text-sm focus:outline-none focus:border-primary"
           />
 
