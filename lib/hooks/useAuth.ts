@@ -171,7 +171,7 @@ export function useAuth() {
 
 
   const signInWithGoogle = async () => {
-    alert(window.location.origin);
+    // alert(window.location.origin);
 
     return supabase.auth.signInWithOAuth({
       provider: 'google',
