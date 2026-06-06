@@ -480,8 +480,27 @@ export default function GroupDetailPage() {
         </div>
 
         {typingUsers.length > 0 && (
-          <div className="px-4 py-2 text-xs text-primary">
-            ⌨ {typingUsers[0]} is typing...
+          <div className="px-4 py-2 flex items-center gap-2">
+            {/* Sender name */}
+            <span className="text-xs text-muted-foreground font-semibold">
+              {typingUsers[0]}
+            </span>
+
+            {/* Animated typing bubble */}
+            <div className="flex items-center gap-1 bg-black/40 border border-muted px-3 py-2 rounded-xl">
+              <span
+                className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce"
+                style={{ animationDelay: '0ms', animationDuration: '900ms' }}
+              />
+              <span
+                className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce"
+                style={{ animationDelay: '150ms', animationDuration: '900ms' }}
+              />
+              <span
+                className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce"
+                style={{ animationDelay: '300ms', animationDuration: '900ms' }}
+              />
+            </div>
           </div>
         )}
 
@@ -496,7 +515,10 @@ export default function GroupDetailPage() {
 
 
             onChange={(e) => {
+              console.log("INPUT CHANGED");
+
               setChatMessage(e.target.value);
+
               setTyping();
             }}
             

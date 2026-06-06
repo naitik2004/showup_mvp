@@ -8,12 +8,23 @@ export function usePresence(groupId: string, userName: string) {
 
   const [onlineCount, setOnlineCount] = useState(0);
   const [typingUsers, setTypingUsers] = useState<string[]>([]);
-  const [channel, setChannel] = useState<any>(null);
-
+  const channelRef = useRef<any>(null);
   const typingTimeout = useRef<NodeJS.Timeout | null>(null);
+  // Keep userName in a ref so setTyping/stopTyping always use the latest value
+  const userNameRef = useRef(userName);
+  useEffect(() => {
+    userNameRef.current = userName;
+  }, [userName]);
 
   useEffect(() => {
+    // Wait until BOTH are ready
     if (!groupId || !userName) return;
+
+    // Clean up any existing channel before creating a new one
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+    }
 
     const room = supabase.channel(`presence:${groupId}`);
 
@@ -21,32 +32,27 @@ export function usePresence(groupId: string, userName: string) {
       .on("presence", { event: "sync" }, () => {
         const state = room.presenceState();
 
-        const users: any[] = Object.values(state).flat() as any[];
+        const latestByUser = new Map<string, boolean>();
 
-        // Remove duplicates
-        const uniqueUsers: any[] = [];
+        Object.values(state).forEach((presences: any[]) => {
+          const latest = presences[presences.length - 1];
+          if (!latest?.userName) return;
 
-        users.forEach((user: any) => {
-        if (
-            !uniqueUsers.find(
-            (u: any) => u.userName === user.userName
-            )
-        ) {
-            uniqueUsers.push(user);
-        }
+          const existing = latestByUser.get(latest.userName);
+          if (existing === undefined) {
+            latestByUser.set(latest.userName, latest.typing === true);
+          } else {
+            latestByUser.set(latest.userName, existing || latest.typing === true);
+          }
         });
 
-        setOnlineCount(uniqueUsers.length);
+        setOnlineCount(latestByUser.size);
 
-        const typing = uniqueUsers
-          .filter(
-            (u: any) =>
-              u.typing === true &&
-              u.userName !== userName
-          )
-          .map((u: any) => u.userName);
+        const typingUsersList = Array.from(latestByUser.entries())
+          .filter(([name, typing]) => typing === true && name !== userNameRef.current)
+          .map(([name]) => name);
 
-        setTypingUsers(typing);
+        setTypingUsers(typingUsersList);
       })
       .subscribe(async (status) => {
         if (status === "SUBSCRIBED") {
@@ -58,57 +64,34 @@ export function usePresence(groupId: string, userName: string) {
         }
       });
 
-    setChannel(room);
+    channelRef.current = room;
 
     return () => {
-      if (typingTimeout.current) {
-        clearTimeout(typingTimeout.current);
-      }
-
+      if (typingTimeout.current) clearTimeout(typingTimeout.current);
       supabase.removeChannel(room);
+      channelRef.current = null;
     };
-  }, [groupId, userName]);
+  }, [groupId, userName]); // 👈 userName in deps — re-runs once name loads
 
   const setTyping = async () => {
-    if (!channel) return;
+    if (!channelRef.current) return;
+    await channelRef.current.track({ userName: userNameRef.current, typing: true });
 
-    await channel.track({
-      userName,
-      typing: true,
-      online_at: new Date().toISOString(),
-    });
-
-    if (typingTimeout.current) {
-      clearTimeout(typingTimeout.current);
-    }
-
+    if (typingTimeout.current) clearTimeout(typingTimeout.current);
     typingTimeout.current = setTimeout(async () => {
-      await channel.track({
-        userName,
-        typing: false,
-        online_at: new Date().toISOString(),
-      });
-    }, 1000);
+      if (!channelRef.current) return;
+      await channelRef.current.track({ userName: userNameRef.current, typing: false });
+    }, 1500);
   };
 
   const stopTyping = async () => {
-    if (!channel) return;
-
-    await channel.track({
-      userName,
-      typing: false,
-      online_at: new Date().toISOString(),
-    });
-
+    if (!channelRef.current) return;
     if (typingTimeout.current) {
       clearTimeout(typingTimeout.current);
+      typingTimeout.current = null;
     }
+    await channelRef.current.track({ userName: userNameRef.current, typing: false });
   };
 
-  return {
-    onlineCount,
-    typingUsers,
-    setTyping,
-    stopTyping,
-  };
+  return { onlineCount, typingUsers, setTyping, stopTyping };
 }
