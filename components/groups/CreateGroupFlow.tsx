@@ -439,7 +439,8 @@ export default function CreateGroupFlow() {
                       }`}
                     >
                       <span className="text-xs font-bold text-cream">Temporary Group</span>
-                      <span className="text-[10px] text-muted-foreground mt-0.5">Auto-deletes 2 hrs after scheduled play.</span>
+                      <span className="text-[10px] text-muted-foreground mt-0.5">Auto-starts at match time if host doesn't start it manually. 
+                        Removed from map 1 hour after match starts..</span>
                     </button>
                     <button
                       type="button"
@@ -518,7 +519,7 @@ export default function CreateGroupFlow() {
                     <p className="text-[10px] text-muted-foreground">
                       {formData.is_permanent
                         ? 'This group is permanent. It will not expire and can be reuse by members for future meetups.'
-                        : 'This group is temporary. It will automatically delete from the map 2 hours after game starts.'}
+                        : "This match will automatically start at the scheduled time if the host doesn't start it manually. It will be removed from the map 1 hour after the match begins.."}
                     </p>
                   </div>
                 </div>

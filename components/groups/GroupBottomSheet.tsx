@@ -39,20 +39,27 @@ export default function GroupBottomSheet({ group, onClose, userId, onJoinSuccess
           .eq('user_id', userId)
           .maybeSingle();
 
-        if (data && data.status === 'accepted') {
+        if (error) {
+          console.error(error);
+          return;
+        }
+
+        if (data?.status === 'accepted') {
           setIsJoined(true);
         }
       } catch (err) {
-        console.error('Error checking membership:', err);
+        console.error('Network error:', err);
       } finally {
         setCheckingJoin(false);
       }
+
     };
 
     checkMembership();
   }, [group, userId, supabase]);
 
   if (!group) return null;
+  const isLive = group.status === "in_progress";
 
   const sportInfo = SPORTS.find((s) => s.id === group.sport);
 
@@ -60,6 +67,11 @@ export default function GroupBottomSheet({ group, onClose, userId, onJoinSuccess
     if (!userId) {
       toast.error('You must be logged in to join a game');
       return;
+    }
+
+    if (group.status === "in_progress") {
+        toast.error("Match already started");
+        return;
     }
 
     setJoining(true);
@@ -103,16 +115,71 @@ export default function GroupBottomSheet({ group, onClose, userId, onJoinSuccess
     <AnimatePresence>
       <div className="absolute inset-x-0 bottom-0 z-[1000] flex justify-center pointer-events-none p-4">
         <motion.div
-          initial={{ y: '100%' }}
-          animate={{ y: 0 }}
-          exit={{ y: '100%' }}
-          transition={{ type: 'spring', damping: 25, stiffness: 220 }}
-          className="w-full max-w-lg bg-surface/95 backdrop-blur-xl border border-muted/80 rounded-3xl p-6 shadow-2xl pointer-events-auto relative overflow-hidden"
+          initial={{ y: 400, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: 400, opacity: 0 }}
+          transition={{
+            duration: 0.25,
+            ease: "easeOut"
+          }}
+
+          className={`
+            w-full max-w-lg
+            backdrop-blur-xl
+            rounded-3xl
+            p-6
+            pointer-events-auto
+            relative
+            overflow-hidden
+            transition-all duration-300
+
+            ${
+              isLive
+                ? `
+                  bg-[#18181b]
+                  border-2 border-red-500
+                  shadow-[0_0_30px_rgba(255,60,60,0.8)]
+                `
+                : `
+                  bg-surface/95
+                  border border-muted/80
+                  shadow-2xl
+                `
+            }
+          `}
         >
           {/* Accent Line Glow */}
-          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
+        <div
+          className={`
+            absolute top-0 left-0 right-0 h-1
+            ${
+              isLive
+                ? "bg-gradient-to-r from-transparent via-red-500 to-transparent"
+                : "bg-gradient-to-r from-transparent via-primary/50 to-transparent"
+            }
+          `}
+        />
 
           {/* Close button */}
+          {isLive && (
+              <div className="absolute top-4 right-16 z-20">
+                <div
+                  className="
+                    bg-red-500
+                    text-white
+                    text-xs
+                    font-black
+                    px-3
+                    py-1
+                    rounded-xl
+                    animate-pulse
+                    shadow-[0_0_25px_rgba(255,50,50,1)]
+                  "
+                >
+                  LIVE
+                </div>
+              </div>
+            )}
           <button
             onClick={onClose}
             className="absolute top-4 right-4 p-1.5 rounded-full hover:bg-muted text-muted-foreground transition-colors"
@@ -122,7 +189,7 @@ export default function GroupBottomSheet({ group, onClose, userId, onJoinSuccess
           </button>
 
           {/* Header */}
-          <div className="flex items-start gap-4 pr-8">
+          <div className="flex items-start gap-4 pr-8"> 
             <div className="text-4xl p-3 bg-black/40 border border-muted rounded-2xl">
               {sportInfo?.emoji || '⚽'}
             </div>
@@ -193,17 +260,64 @@ export default function GroupBottomSheet({ group, onClose, userId, onJoinSuccess
           <div className="flex gap-3">
             {isJoined ? (
               <Link href={`/groups/${group.id}`} className="flex-1">
-                <Button className="w-full h-12 bg-primary text-primary-foreground font-bold hover:bg-primary/95 rounded-xl">
+              <Button
+                className={`
+                  w-full h-12 font-bold rounded-xl
+
+                  ${
+                    isLive
+                      ? `
+                        bg-red-500
+                        hover:bg-red-600
+                        text-white
+                        shadow-[0_0_20px_rgba(255,50,50,0.8)]
+                      `
+                      : `
+                        bg-primary
+                        text-primary-foreground
+                        hover:bg-primary/95
+                      `
+                  }
+                `}
+              >
                   Open Group Chat
                 </Button>
               </Link>
             ) : (
               <Button
                 onClick={handleJoin}
-                disabled={joining || checkingJoin || openSlots === 0}
-                className="flex-1 h-12 bg-primary text-primary-foreground font-bold hover:bg-primary/95 rounded-xl disabled:opacity-50"
+                disabled={
+                  joining ||
+                  checkingJoin ||
+                  openSlots === 0 ||
+                  group.status === "in_progress"
+                }
+                className={`
+                  flex-1 h-12 font-bold rounded-xl disabled:opacity-50
+
+                  ${
+                    isLive
+                      ? `
+                        bg-red-500
+                        hover:bg-red-600
+                        text-white
+                        shadow-[0_0_20px_rgba(255,50,50,0.8)]
+                      `
+                      : `
+                        bg-primary
+                        text-primary-foreground
+                        hover:bg-primary/95
+                      `
+                  }
+                `}
               >
-                {joining ? 'Joining...' : openSlots === 0 ? 'Group is Full' : 'Join Game'}
+                {joining
+                  ? "Joining..."
+                  : group.status === "in_progress"
+                  ? "Match Live"
+                  : openSlots === 0
+                  ? "Group is Full"
+                  : "Join Game"}
               </Button>
             )}
             <Link href={`/groups/${group.id}`} className="shrink-0">

@@ -56,13 +56,14 @@ export interface GameGroup {
   scheduled_at: string;
   expires_at: string | null;
   is_permanent: boolean;
-  status: GroupStatus;
+  status: string;
   created_at: string;
   // Joined fields
   host?: User;
   host_name?: string;
   member_count?: number;
   distance?: number;
+
 }
 
 export interface GroupMember {

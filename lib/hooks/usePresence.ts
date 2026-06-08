@@ -35,15 +35,9 @@ export function usePresence(groupId: string, userName: string) {
         const latestByUser = new Map<string, boolean>();
 
         Object.values(state).forEach((presences: any[]) => {
-          const latest = presences[presences.length - 1];
-          if (!latest?.userName) return;
-
-          const existing = latestByUser.get(latest.userName);
-          if (existing === undefined) {
+            const latest = presences[presences.length - 1];
+            if (!latest?.userName) return;
             latestByUser.set(latest.userName, latest.typing === true);
-          } else {
-            latestByUser.set(latest.userName, existing || latest.typing === true);
-          }
         });
 
         setOnlineCount(latestByUser.size);

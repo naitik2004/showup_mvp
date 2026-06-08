@@ -24,7 +24,33 @@ export function useGroups(
     setLoading(true);
     setError(null);
 
-    try {
+    try { 
+
+      // Auto-start games whose scheduled time has arrived
+      await supabase
+        .from('game_groups')
+        .update({
+          status: 'in_progress',
+          started_at: new Date().toISOString(),
+        })
+        .eq('status', 'open')
+        .lte('scheduled_at', new Date().toISOString());
+
+
+      // Auto-expire games 1 hour after they started
+      await supabase
+        .from('game_groups')
+        .update({
+          status: 'expired',
+        })
+        .eq('status', 'in_progress')
+        .lte(
+          'started_at',
+          new Date(
+            Date.now() - 60 * 60 * 1000
+          ).toISOString()
+        );
+        
       const { data, error: fetchError } = await supabase.rpc(
         'find_groups_near',
         {

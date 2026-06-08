@@ -33,11 +33,21 @@ export default function GroupDetailPage() {
   const {onlineCount,typingUsers,setTyping,stopTyping} = usePresence(groupId, currentUserName);
   
   useEffect(() => {
-    messagesEndRef.current?.scrollTo({
-      top: messagesEndRef.current.scrollHeight,
-      behavior: 'smooth',
+    messagesEndRef.current?.scrollIntoView({
+      behavior: messages.length > 1 ? 'smooth' : 'auto',
     });
   }, [messages]);
+
+
+  useEffect(() => {
+    if (!loading) {
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({
+          behavior: 'auto',
+        });
+      }, 100);
+    }
+  }, [loading]);
 
 
   useEffect(() => {
@@ -183,7 +193,7 @@ export default function GroupDetailPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
             {/* Left Side */}
-            <div className="md:col-span-2 space-y-6">
+            <div className="space-y-6">
 
               <div className="bg-surface/30 border border-muted rounded-3xl p-6 space-y-4">
                 <div className="h-6 w-32 bg-muted rounded" />
@@ -294,7 +304,52 @@ export default function GroupDetailPage() {
       router.push('/map');
     };
 
+
+    const kickPlayer = async (userId: string) => {
+      if (!confirm("Remove this player?")) {
+        return;
+      }
+
+      const { error } = await supabase
+        .from("group_members")
+        .delete()
+        .eq("group_id", groupId)
+        .eq("user_id", userId);
+
+      if (error) {
+        toast.error("Failed to remove player");
+        return;
+      }
+
+      toast.success("Player removed");
+    };
+
     const isHost = currentUserId === group.host_id;
+    
+    const updateGroupStatus = async (
+      status: 'in_progress' | 'expired'
+    ) => {
+      const { error } = await supabase
+        .from("game_groups")
+        .update({
+          status,
+          ...(status === "in_progress"
+            ? { started_at: new Date().toISOString() }
+            : {}),
+        })
+        .eq("id", groupId);
+
+      if (error) {
+        toast.error("Failed to update status");
+        return;
+      }
+
+      setGroup((prev) =>
+        prev ? { ...prev, status } : prev
+      );
+
+      toast.success(`Game marked as ${status}`);
+    };
 
 
 
@@ -318,19 +373,39 @@ export default function GroupDetailPage() {
         </div>
       </header>
 
-      <div className="max-w-4xl w-full mx-auto p-4 flex-1 grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="max-w-7xl w-full mx-auto p-6 flex flex-col lg:flex-row gap-8">
+
         {/* Left Side: Game details & Players list */}
-        <div className="md:col-span-2 space-y-6">
+        <div className="flex-1 space-y-6">
           <Card className="bg-surface/40 border-muted">
             <CardContent className="p-6 space-y-6">
               <div className="flex items-center justify-between flex-wrap gap-2">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
+
                   <span className="text-sm font-extrabold uppercase tracking-widest px-2.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">
                     {group.skill_level}
                   </span>
+
+                  <span
+                    className={`text-xs px-2 py-1 rounded-full font-bold
+                      ${
+                        group.status === "in_progress"
+                          ? "bg-blue-500/20 text-blue-400"
+                          : group.status === "expired"
+                          ? "bg-red-500/20 text-red-400"
+                          : group.status === "full"
+                          ? "bg-orange-500/20 text-orange-400"
+                          : "bg-yellow-500/20 text-yellow-400"
+                      }
+                    `}
+                  >
+                    {group.status?.toUpperCase()}
+                  </span>
+
                   <span className="text-xs text-muted-foreground">
                     {group.is_permanent ? 'Permanent Group' : 'Temporary Group'}
                   </span>
+
                 </div>
               </div>
 
@@ -365,14 +440,42 @@ export default function GroupDetailPage() {
 
                 </div>
                 {!isHost && (
+                  <Button
+                    variant="destructive"
+                    className="w-full"
+                    onClick={handleLeaveGroup}
+                  >
+                    Leave Group
+                  </Button>
+                )}
+
+                {isHost && group.status === "open" && (
+                  <div className="flex gap-2">
+                    <Button
+                      className="flex-1"
+                      onClick={() => updateGroupStatus("in_progress")}
+                    >
+                      Start Match
+                    </Button>
+
                     <Button
                       variant="destructive"
-                      className="w-full"
-                      onClick={handleLeaveGroup}
+                      className="flex-1"
+                      onClick={() => updateGroupStatus("expired")}
                     >
-                      Leave Group
+                      Cancel Match
                     </Button>
-                  )}
+                  </div>
+                )}
+
+                {isHost && group.status === "live" && (
+                  <Button
+                    className="w-full"
+                    onClick={() => updateGroupStatus("expired")}
+                  >
+                    End Match
+                  </Button>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -398,143 +501,160 @@ export default function GroupDetailPage() {
                         Host
                       </span>
                     )}
+                    {isHost && member.user_id !== group.host_id && (
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => kickPlayer(member.user_id)}
+                      >
+                        Kick
+                      </Button>
+                    )}
                   </CardContent>
                 </Card>
               ))}
             </div>
           </div>
         </div>
-      
 
-      {/* Right Side: Group Chat */}
-        <div className="flex flex-col h-[75vh] border border-muted bg-surface/20 rounded-3xl overflow-hidden shadow-2xl">
+        {/* Right Side: Group Chat */}
+        <div className="w-full lg:w-[420px] shrink-0">
+          <div className="flex flex-col h-[78vh] border border-muted bg-surface/20 rounded-3xl overflow-hidden shadow-2xl">
 
-        <div className="p-4 bg-surface border-b border-muted flex items-center gap-2">
-          <MessageSquare className="w-5 h-5 text-primary" />
-          <div>
-            <h3 className="font-heading font-extrabold text-cream">
-              Group Chat
-            </h3>
-
-            <p className="text-xs text-muted-foreground">
-              🟢 {onlineCount} online
-            </p>
-          </div>
-        </div>
-
-        <div ref={messagesEndRef} className="flex-1 min-h-0 p-4 overflow-y-auto space-y-3">
-
-          {messages.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-center">
-              <div className="p-3 bg-muted rounded-full text-muted-foreground mb-2">
-                <MessageSquare className="w-6 h-6" />
+            {/* Header */}
+            <div className="px-5 py-4 bg-surface border-b border-muted flex items-center gap-3">
+              <MessageSquare className="w-5 h-5 text-primary" />
+              <div>
+                <h3 className="font-heading font-extrabold text-cream">
+                  Group Chat
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  🟢 {onlineCount} online
+                </p>
               </div>
-
-              <p className="text-sm font-bold text-cream">
-                Match Chat Group
-              </p>
-
-              <p className="text-xs text-muted-foreground max-w-[200px]">
-                No messages yet. Start the conversation.
-              </p>
             </div>
-          ) : (
-            messages.map((message) => {
-              const isMine = message.sender_id === currentUserId;
 
-              return (
-                <div
-                  key={message.id}
-                  className={`flex ${
-                    isMine ? 'justify-end' : 'justify-start'
-                  }`}
-                >
-                  <div
-                    className={`max-w-[80%] rounded-xl p-3 ${
-                      isMine
-                        ? 'bg-primary text-black'
-                        : 'bg-black/40 border border-muted'
-                    }`}
-                  >
-                    {!isMine && (
-                      <p className="text-xs font-bold text-primary mb-1">
-                        {message.sender?.name || 'Player'}
-                      </p>
-                    )}
+            {/* Messages */}
+            <div className="flex-1 min-h-0 p-4 overflow-y-auto space-y-3">
 
-                    <p className="text-sm">
-                      {message.content}
-                    </p>
-                    <p className="text-[10px] opacity-60 mt-1">
-                      {new Date(message.created_at).toLocaleTimeString([], {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
-                    </p>
+              {messages.length === 0 ? (
+                <div className="h-full flex flex-col items-center justify-center text-center">
+                  <div className="p-3 bg-muted rounded-full text-muted-foreground mb-2">
+                    <MessageSquare className="w-6 h-6" />
                   </div>
-                </div>
-              );
-            })
-          )}
 
+                  <p className="text-sm font-bold text-cream">
+                    Match Chat Group
+                  </p>
+
+                  <p className="text-xs text-muted-foreground max-w-[200px]">
+                    No messages yet. Start the conversation.
+                  </p>
+                </div>
+              ) : (
+                messages.map((message) => {
+                  const isMine = message.sender_id === currentUserId;
+                  
+
+                  return (
+                    <div
+                      key={message.id}
+                      className={`flex ${
+                        isMine ? 'justify-end' : 'justify-start'
+                      }`}
+                    >
+                      <div
+                        className={`max-w-[70%] rounded-xl p-3 ${
+                          isMine
+                            ? 'bg-primary text-black'
+                            : 'bg-black/40 border border-muted'
+                        }`}
+                      >
+                        {!isMine && (
+                          <p className="text-xs font-bold text-primary mb-1">
+                            {message.sender?.name || 'Player'}
+                          </p>
+                        )}
+
+                        <p className="text-sm break-words">
+                          {message.content}
+                        </p>
+                        <p className="text-[10px] opacity-60 mt-1">
+                          {new Date(message.created_at).toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })
+                
+              )}
+              <div ref={messagesEndRef} />
+
+            </div>
+
+            {/* Typing */}
+            {typingUsers.length > 0 && (
+              <div className="px-4 py-2 flex items-center gap-2">
+                {/* Sender name */}
+                <span className="text-xs text-muted-foreground font-semibold">
+                  {typingUsers[0]}
+                </span>
+
+                {/* Animated typing bubble */}
+                <div className="flex items-center gap-1 bg-black/40 border border-muted px-3 py-2 rounded-xl">
+                  <span
+                    className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce"
+                    style={{ animationDelay: '0ms', animationDuration: '900ms' }}
+                  />
+                  <span
+                    className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce"
+                    style={{ animationDelay: '150ms', animationDuration: '900ms' }}
+                  />
+                  <span
+                    className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce"
+                    style={{ animationDelay: '300ms', animationDuration: '900ms' }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Input */}
+            <form
+              onSubmit={handleSendMessage}
+              className="p-3 bg-surface border-t border-muted flex gap-2"
+            >
+              <input
+                type="text"
+                placeholder="Send message..."
+                value={chatMessage}
+
+                onChange={(e) => {
+                  console.log("INPUT CHANGED");
+
+                  setChatMessage(e.target.value);
+
+                  setTyping();
+                }}
+                
+                className="flex-1 bg-black/40 border border-muted text-cream px-3 py-2 rounded-xl text-sm focus:outline-none focus:border-primary"
+              />
+
+              <Button
+                type="submit"
+                size="icon"
+                className="bg-primary text-primary-foreground rounded-xl shrink-0"
+              >
+                <Send className="w-4 h-4" />
+              </Button>
+            </form>
+
+          </div>
         </div>
 
-        {typingUsers.length > 0 && (
-          <div className="px-4 py-2 flex items-center gap-2">
-            {/* Sender name */}
-            <span className="text-xs text-muted-foreground font-semibold">
-              {typingUsers[0]}
-            </span>
-
-            {/* Animated typing bubble */}
-            <div className="flex items-center gap-1 bg-black/40 border border-muted px-3 py-2 rounded-xl">
-              <span
-                className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce"
-                style={{ animationDelay: '0ms', animationDuration: '900ms' }}
-              />
-              <span
-                className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce"
-                style={{ animationDelay: '150ms', animationDuration: '900ms' }}
-              />
-              <span
-                className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce"
-                style={{ animationDelay: '300ms', animationDuration: '900ms' }}
-              />
-            </div>
-          </div>
-        )}
-
-        <form
-          onSubmit={handleSendMessage}
-          className="p-3 bg-surface border-t border-muted flex gap-2"
-        >
-          <input
-            type="text"
-            placeholder="Send message..."
-            value={chatMessage}
-
-
-            onChange={(e) => {
-              console.log("INPUT CHANGED");
-
-              setChatMessage(e.target.value);
-
-              setTyping();
-            }}
-            
-            className="flex-1 bg-black/40 border border-muted text-cream px-3 py-2 rounded-xl text-sm focus:outline-none focus:border-primary"
-          />
-
-          <Button
-            type="submit"
-            size="icon"
-            className="bg-primary text-primary-foreground rounded-xl shrink-0"
-          >
-            <Send className="w-4 h-4" />
-          </Button>
-        </form>
       </div>
-      </div>
-      </div>
+    </div>
   );
 }
