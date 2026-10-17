@@ -15,8 +15,9 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: 'ShowUp — Sports Social Platform MVP',
-  description: 'Find players near you, drop a pin, show up and play. Sports social app for urban India.',
+  title: 'ShowUp — Sports Social Platform',
+  description: 'Find players near you, drop a pin, show up and play. Hyperlocal sports social network for urban India.',
+  manifest: '/manifest.json',
 };
 
 export default function RootLayout({

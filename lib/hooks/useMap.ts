@@ -7,31 +7,27 @@ export const DEFAULT_COORDS = { lat: 28.6139, lng: 77.2090 };
 
 export function useMap() {
   const [coords, setCoords] = useState<{ lat: number; lng: number }>(DEFAULT_COORDS);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [permissionDenied, setPermissionDenied] = useState(false);
 
   const requestLocation = useCallback(() => {
     if (typeof window === 'undefined' || !navigator.geolocation) {
-      setLoading(false);
       return;
     }
 
-    setLoading(true);
     navigator.geolocation.getCurrentPosition(
       (position) => {
         setCoords({
           lat: position.coords.latitude,
           lng: position.coords.longitude,
         });
-        setLoading(false);
         setPermissionDenied(false);
       },
       (error) => {
-        console.warn('Geolocation error:', error);
+        console.warn('Geolocation error:', error.message);
         setPermissionDenied(true);
-        setLoading(false);
       },
-      { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+      { enableHighAccuracy: false, timeout: 4000, maximumAge: 60000 }
     );
   }, []);
 

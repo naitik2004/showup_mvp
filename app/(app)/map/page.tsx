@@ -10,6 +10,7 @@ import FilterBar from '@/components/map/FilterBar';
 import CreateGroupFAB from '@/components/map/CreateGroupFAB';
 import LocationPermissionPrompt from '@/components/map/LocationPermissionPrompt';
 import GroupBottomSheet from '@/components/groups/GroupBottomSheet';
+import MapHeader from '@/components/map/MapHeader';
 import { Sport, GameGroup } from '@/types';
 
 // Dynamically import MapView to prevent SSR failures (Leaflet relies on global window)
@@ -79,6 +80,8 @@ export default function MapPage() {
 
   return (
     <main className="relative w-screen h-screen overflow-hidden bg-[#0A0A0B]">
+      <MapHeader userId={sessionUser?.id} />
+
       {permissionDenied && (
         <LocationPermissionPrompt onRequest={requestLocation} />
       )}

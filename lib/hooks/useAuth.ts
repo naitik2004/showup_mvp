@@ -171,14 +171,47 @@ export function useAuth() {
 
 
   const signInWithGoogle = async () => {
-    // alert(window.location.origin);
-
     return supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
         redirectTo: `${window.location.origin}/callback`,
       },
     });
+  };
+
+  const signInWithEmail = async (email: string, password: string) => {
+    return supabase.auth.signInWithPassword({
+      email: email.trim(),
+      password,
+    });
+  };
+
+  const signUpWithEmail = async (email: string, password: string, name?: string, city?: string) => {
+    const res = await supabase.auth.signUp({
+      email: email.trim(),
+      password,
+      options: {
+        data: {
+          full_name: name || '',
+          city: city || 'Delhi NCR',
+        },
+      },
+    });
+
+    if (res.data?.user && name) {
+      try {
+        await supabase.from('users').upsert({
+          id: res.data.user.id,
+          name,
+          city: city || 'Delhi NCR',
+          preferred_sports: [],
+        });
+      } catch (e) {
+        console.warn('Profile creation fallback:', e);
+      }
+    }
+
+    return res;
   };
 
   

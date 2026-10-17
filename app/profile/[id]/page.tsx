@@ -54,55 +54,51 @@ export default function ProfilePage() {
         currentUserId: string,
         profileId: string
     ) => {
+        try {
+            const { data: friendship } = await supabase
+                .from('friendships')
+                .select('*')
+                .or(
+                    `and(user_a.eq.${currentUserId},user_b.eq.${profileId}),and(user_a.eq.${profileId},user_b.eq.${currentUserId})`
+                )
+                .maybeSingle();
 
-        const { data: friend } = await supabase
-            .from('friends')
-            .select('*')
-            .or(
-                `and(user_id.eq.${currentUserId},friend_id.eq.${profileId}),
-                and(user_id.eq.${profileId},friend_id.eq.${currentUserId})`
-            )
-            .maybeSingle();
-
-        if (friend) {
-            setFriendStatus('friends');
-            return;
-        }
-
-        const { data: request } = await supabase
-            .from('friend_requests')
-            .select('*')
-            .or(
-                `and(sender_id.eq.${currentUserId},receiver_id.eq.${profileId}),
-                and(sender_id.eq.${profileId},receiver_id.eq.${currentUserId})`
-            )
-            .eq('status', 'pending')
-            .maybeSingle();
-
-        if (request) {
-            if (request.sender_id === currentUserId) {
-                setFriendStatus('pending');
-            } else {
-                setFriendStatus('accept');
+            if (friendship) {
+                if (friendship.status === 'accepted') {
+                    setFriendStatus('friends');
+                } else if (friendship.status === 'pending') {
+                    if (friendship.user_a === currentUserId) {
+                        setFriendStatus('pending');
+                    } else {
+                        setFriendStatus('accept');
+                    }
+                }
             }
+        } catch (err) {
+            console.warn('Error checking friendship:', err);
         }
     };
 
     const sendFriendRequest = async () => {
+        if (!currentUserId) {
+            router.push('/login');
+            return;
+        }
 
-    const { error } = await supabase
-        .from('friend_requests')
-        .insert({
-            sender_id: currentUserId,
-            receiver_id: profileId,
-        });
+        const { error } = await supabase
+            .from('friendships')
+            .insert({
+                user_a: currentUserId,
+                user_b: profileId,
+                status: 'pending',
+            });
 
-    if (!error) {
-        console.error(error);
-        return;
-    }
-    setFriendStatus('pending');
-};
+        if (error) {
+            console.error(error);
+            return;
+        }
+        setFriendStatus('pending');
+    };
 
     if (loading) {
         return (
@@ -242,7 +238,7 @@ export default function ProfilePage() {
 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
 
-                    {profile.sports?.map((sport: string) => (
+                    {(profile.preferred_sports || profile.sports || []).map((sport: string) => (
                         <div
                             key={sport}
                             className="bg-surface/40 rounded-3xl p-5 text-center"
@@ -252,10 +248,12 @@ export default function ProfilePage() {
                                 {sport === 'football' && '⚽'}
                                 {sport === 'basketball' && '🏀'}
                                 {sport === 'tennis' && '🎾'}
+                                {sport === 'cricket' && '🏏'}
+                                {sport === 'table_tennis' && '🏓'}
                             </div>
 
                             <p className="font-bold capitalize">
-                                {sport}
+                                {sport.replace('_', ' ')}
                             </p>
                         </div>
                     ))}

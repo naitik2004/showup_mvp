@@ -9,7 +9,7 @@ interface FilterBarProps {
 
 export default function FilterBar({ selectedSport, onChange }: FilterBarProps) {
   return (
-    <div className="absolute top-4 left-4 right-4 z-[999] flex justify-center pointer-events-none">
+    <div className="absolute top-16 left-4 right-4 z-[990] flex justify-center pointer-events-none">
       <div className="w-full max-w-lg overflow-x-auto pb-1.5 flex gap-2 no-scrollbar pointer-events-auto px-4 py-2 bg-black/40 backdrop-blur-md border border-muted/50 rounded-2xl shadow-xl">
         <button
           onClick={() => onChange('all')}

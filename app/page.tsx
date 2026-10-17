@@ -1,11 +1,11 @@
 import { Metadata } from 'next';
-import ClientHomePage from '@/components/home/ClientHomePage';
+import LandingPage from '@/components/landing/LandingPage';
 
 export const metadata: Metadata = {
-  title: 'ShowUp — Find Your Next Game',
-  description: 'Drop a pin on a live map, find nearby players, and show up. Sports social platform for urban India.',
+  title: 'ShowUp — Find Players. Drop A Pin. Show Up.',
+  description: 'The real-time sports matchmaking network for urban India. Discover pickup football, badminton, basketball runs, and cricket nets near you in seconds.',
 };
 
 export default function HomePage() {
-  return <ClientHomePage />;
+  return <LandingPage />;
 }
