@@ -26,7 +26,7 @@ import { SPORTS, Sport } from '@/types';
 
 export default function ProfileHomePage() {
   const router = useRouter();
-  const { sessionUser, user, loading: authLoading, signOut } = useAuth();
+  const { sessionUser, firebaseUser, user, loading: authLoading, signOut } = useAuth();
   const supabase = createClient();
 
   const [stats, setStats] = useState({
@@ -138,7 +138,7 @@ export default function ProfileHomePage() {
   }
 
   // Authenticated Profile View
-  const displayName = user?.name || sessionUser.user_metadata?.full_name || sessionUser.email?.split('@')[0] || 'Player';
+  const displayName = user?.name || firebaseUser?.displayName || firebaseUser?.email?.split('@')[0] || 'Player';
   const displayCity = user?.city || 'India';
   const preferredSports = user?.preferred_sports || [];
 

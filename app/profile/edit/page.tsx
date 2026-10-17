@@ -25,10 +25,8 @@ export default function EditProfilePage() {
       setName(user.name || '');
       setCity(user.city || '');
       setSelectedSports(user.preferred_sports || []);
-    } else if (sessionUser) {
-      setName(sessionUser.user_metadata?.full_name || '');
     }
-  }, [user, sessionUser]);
+  }, [user]);
 
   const toggleSport = (sportId: Sport) => {
     setSelectedSports((prev) =>

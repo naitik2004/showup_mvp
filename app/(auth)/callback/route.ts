@@ -1,54 +1,7 @@
-import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 
+// Firebase popup auth doesn't use this route — kept as a fallback redirect.
 export async function GET(request: Request) {
-  const { searchParams, origin } = new URL(request.url);
-
-  const code = searchParams.get('code');
-
-  if (!code) {
-    return NextResponse.redirect(`${origin}/login`);
-  }
-
-  const supabase = createClient();
-
-  await supabase.auth.exchangeCodeForSession(code);
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return NextResponse.redirect(`${origin}/login`);
-  }
-
-const { data: profile } = await supabase
-  .from('users')
-  .select('*')
-  .eq('id', user.id)
-  .maybeSingle();
-
-if (!profile) {
-  const fullName =
-    user.user_metadata?.full_name ||
-    user.user_metadata?.name ||
-    '';
-
-  await supabase.from('users').insert({
-    id: user.id,
-    name: fullName,
-    city: '',
-    preferred_sports: [],
-    location_visible: false,
-    onboarded: false,
-  });
-
-  return NextResponse.redirect(`${origin}/onboarding`);
-}
-
-  if (!profile.onboarded) {
-    return NextResponse.redirect(`${origin}/onboarding`);
-  }
-
+  const { origin } = new URL(request.url);
   return NextResponse.redirect(`${origin}/map`);
 }

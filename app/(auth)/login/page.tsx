@@ -1,156 +1,24 @@
 'use client';
 
-import { useState, useRef, useCallback, useEffect } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/hooks/useAuth';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { ArrowLeft, ArrowRight, Check, Mail } from 'lucide-react';
-
-const OTP_LENGTH = 6;
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function LoginPage() {
   const router = useRouter();
-  const { signInWithEmailOtp, verifyEmailOtp } = useAuth();
+  const { signInWithGoogle } = useAuth();
 
-  const [step, setStep] = useState<'email' | 'code'>('email');
-  const [email, setEmail] = useState('');
-  const [digits, setDigits] = useState<string[]>(Array(OTP_LENGTH).fill(''));
-  const [sending, setSending] = useState(false);
-  const [verifying, setVerifying] = useState(false);
-  const [cooldown, setCooldown] = useState(0);
-
-  const inputsRef = useRef<(HTMLInputElement | null)[]>([]);
-
-  useEffect(() => {
-    if (cooldown <= 0) return;
-    const t = setTimeout(() => setCooldown((c) => c - 1), 1000);
-    return () => clearTimeout(t);
-  }, [cooldown]);
-
-  const handleSendCode = async () => {
-    const value = email.trim().toLowerCase();
-    if (!EMAIL_RE.test(value)) {
-      toast.error('Please enter a valid email address');
+  const handleGoogleSignIn = async () => {
+    const { success, onboardingComplete, error } = await signInWithGoogle();
+    if (!success) {
+      toast.error(error || 'Sign-in failed');
       return;
     }
-    try {
-      setSending(true);
-      const { error } = await signInWithEmailOtp(value);
-      if (error) {
-        toast.error(error.message || 'Failed to send code. Try again.');
-        return;
-      }
-      setDigits(Array(OTP_LENGTH).fill(''));
-      setStep('code');
-      setCooldown(30);
-      toast.success('Sign-in code sent! Check your inbox.');
-      setTimeout(() => inputsRef.current[0]?.focus(), 50);
-    } catch (err: any) {
-      toast.error(err?.message || 'Something went wrong');
-    } finally {
-      setSending(false);
-    }
-  };
-
-  const setDigit = useCallback((index: number, val: string) => {
-    setDigits((prev) => {
-      const next = [...prev];
-      next[index] = val;
-      return next;
-    });
-  }, []);
-
-  const handleChange = (index: number, raw: string) => {
-    const clean = raw.replace(/\D/g, '');
-    if (!clean) {
-      setDigit(index, '');
-      return;
-    }
-    // Handle multiple characters (e.g. paste into a single box)
-    if (clean.length > 1) {
-      const next = [...digits];
-      for (let i = 0; i < clean.length && index + i < OTP_LENGTH; i++) {
-        next[index + i] = clean[i];
-      }
-      setDigits(next);
-      const focusIdx = Math.min(index + clean.length, OTP_LENGTH - 1);
-      inputsRef.current[focusIdx]?.focus();
-      return;
-    }
-    setDigit(index, clean);
-    if (index < OTP_LENGTH - 1) {
-      inputsRef.current[index + 1]?.focus();
-    }
-  };
-
-  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Backspace' && !digits[index] && index > 0) {
-      inputsRef.current[index - 1]?.focus();
-      setDigit(index - 1, '');
-    }
-    if (e.key === 'ArrowLeft' && index > 0) {
-      inputsRef.current[index - 1]?.focus();
-    }
-    if (e.key === 'ArrowRight' && index < OTP_LENGTH - 1) {
-      inputsRef.current[index + 1]?.focus();
-    }
-  };
-
-  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
-    e.preventDefault();
-    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, OTP_LENGTH);
-    if (!pasted) return;
-    const next = Array(OTP_LENGTH).fill('');
-    for (let i = 0; i < pasted.length; i++) next[i] = pasted[i];
-    setDigits(next);
-    inputsRef.current[Math.min(pasted.length, OTP_LENGTH - 1)]?.focus();
-  };
-
-  const token = digits.join('');
-
-  const handleVerify = async () => {
-    if (token.length !== OTP_LENGTH) {
-      toast.error('Enter the full 6-digit code');
-      return;
-    }
-    try {
-      setVerifying(true);
-      const { error, onboardingComplete } = await verifyEmailOtp(email, token);
-      if (error) {
-        toast.error(error.message || 'Invalid or expired code');
-        setDigits(Array(OTP_LENGTH).fill(''));
-        inputsRef.current[0]?.focus();
-        return;
-      }
-      toast.success('Signed in!');
-      router.push(onboardingComplete ? '/map' : '/onboarding');
-    } catch (err: any) {
-      toast.error(err?.message || 'Verification failed');
-    } finally {
-      setVerifying(false);
-    }
-  };
-
-  const handleResend = async () => {
-    if (cooldown > 0) return;
-    try {
-      const { error } = await signInWithEmailOtp(email);
-      if (error) {
-        toast.error(error.message || 'Could not resend code');
-        return;
-      }
-      setDigits(Array(OTP_LENGTH).fill(''));
-      setCooldown(30);
-      toast.success('A new code is on its way.');
-    } catch (err: any) {
-      toast.error(err?.message || 'Something went wrong');
-    }
+    toast.success('Signed in with Google!');
+    router.push(onboardingComplete ? '/map' : '/onboarding');
   };
 
   return (
@@ -175,127 +43,28 @@ export default function LoginPage() {
         </div>
 
         <Card className="border-muted bg-surface/40 backdrop-blur-xl">
-          <CardContent className="p-6">
-            <AnimatePresence mode="wait">
-              {step === 'email' ? (
-                <motion.div
-                  key="email"
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: 20 }}
-                  transition={{ duration: 0.2 }}
-                  className="space-y-5"
-                >
-                  <div className="space-y-1">
-                    <h2 className="text-xl font-bold text-cream">Sign in or create account</h2>
-                    <p className="text-sm text-muted-foreground">
-                      We&apos;ll email you a 6-digit code. No password needed.
-                    </p>
-                  </div>
+          <CardContent className="p-8 flex flex-col items-center gap-6">
+            <p className="text-sm text-muted-foreground text-center">
+              Sign in or create an account — same button.
+            </p>
 
-                  <div className="space-y-2">
-                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                      Email address
-                    </label>
-                    <div className="relative">
-                      <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <Input
-                        type="email"
-                        inputMode="email"
-                        autoComplete="email"
-                        placeholder="you@example.com"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && handleSendCode()}
-                        className="h-12 pl-10 bg-black/40 border-muted text-cream font-medium focus-visible:ring-primary text-base"
-                      />
-                    </div>
-                  </div>
-
-                  <Button
-                    onClick={handleSendCode}
-                    disabled={sending}
-                    className="w-full h-12 bg-primary text-primary-foreground font-bold text-base hover:bg-primary/90 transition-all rounded-xl shadow-lg shadow-primary/10 flex items-center justify-center gap-2"
-                  >
-                    {sending ? 'Sending code...' : 'Continue'}
-                    {!sending && <ArrowRight className="w-4 h-4" />}
-                  </Button>
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="code"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.2 }}
-                  className="space-y-5"
-                >
-                  <button
-                    onClick={() => setStep('email')}
-                    className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-cream transition-colors"
-                  >
-                    <ArrowLeft className="w-4 h-4" />
-                    Change email
-                  </button>
-
-                  <div className="space-y-1">
-                    <h2 className="text-xl font-bold text-cream">Enter your code</h2>
-                    <p className="text-sm text-muted-foreground">
-                      Sent to <span className="text-cream font-medium">{email}</span>
-                    </p>
-                  </div>
-
-                  <div className="flex items-center justify-between gap-2">
-                    {digits.map((d, i) => (
-                      <input
-                        key={i}
-                        ref={(el) => { inputsRef.current[i] = el; }}
-                        type="text"
-                        inputMode="numeric"
-                        autoComplete="one-time-code"
-                        maxLength={OTP_LENGTH}
-                        value={d}
-                        onChange={(e) => handleChange(i, e.target.value)}
-                        onKeyDown={(e) => handleKeyDown(i, e)}
-                        onPaste={handlePaste}
-                        className="w-full aspect-square h-14 text-center text-2xl font-bold bg-black/40 border border-muted rounded-xl text-cream focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus:border-transparent"
-                      />
-                    ))}
-                  </div>
-
-                  <Button
-                    onClick={handleVerify}
-                    disabled={verifying || token.length !== OTP_LENGTH}
-                    className="w-full h-12 bg-primary text-primary-foreground font-bold text-base hover:bg-primary/90 transition-all rounded-xl shadow-lg shadow-primary/10 flex items-center justify-center gap-2 disabled:opacity-50"
-                  >
-                    {verifying ? 'Verifying...' : 'Verify & continue'}
-                    {!verifying && <Check className="w-4 h-4" />}
-                  </Button>
-
-                  <div className="text-center">
-                    <button
-                      onClick={handleResend}
-                      disabled={cooldown > 0}
-                      className="text-sm text-muted-foreground hover:text-cream transition-colors disabled:opacity-50"
-                    >
-                      {cooldown > 0 ? `Resend code in ${cooldown}s` : 'Resend code'}
-                    </button>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+            <Button
+              onClick={handleGoogleSignIn}
+              className="w-full h-13 bg-white text-black font-bold text-base hover:bg-gray-100 transition-all rounded-xl shadow-lg flex items-center justify-center gap-3"
+            >
+              <svg className="w-5 h-5" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+              </svg>
+              Continue with Google
+            </Button>
           </CardContent>
         </Card>
 
-        <p className="text-sm text-center text-muted-foreground mt-5">
-          New to ShowUp?{' '}
-          <Link href="/register" className="text-primary font-semibold hover:underline">
-            Create an account
-          </Link>
-        </p>
-
-        <p className="text-xs text-center text-muted-foreground mt-2">
-          By continuing you agree to ShowUp&apos;s terms. Browse games without an account.
+        <p className="text-xs text-center text-muted-foreground mt-5">
+          By continuing you agree to ShowUp&apos;s terms.
         </p>
       </motion.div>
     </div>

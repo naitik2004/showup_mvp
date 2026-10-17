@@ -1,288 +1,112 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { signInWithPopup, signOut as fbSignOut, onAuthStateChanged } from 'firebase/auth';
 import { createClient } from '@/lib/supabase/client';
-import { User, Sport, City } from '@/types';
+import { auth, googleProvider } from '@/lib/firebase';
+import { User, Sport } from '@/types';
 import { useRouter } from 'next/navigation';
 
-
-
 export function useAuth() {
-
   const supabase = createClient();
   const router = useRouter();
-  const [sessionUser, setSessionUser] = useState<any>(null);
+  const [firebaseUser, setFirebaseUser] = useState<any>(null);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  
 
-  const fetchProfile = useCallback(async (userId: string) => {
-
+  const fetchProfile = useCallback(async (uid: string) => {
     try {
-      
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('users')
         .select('*')
-        .eq('id', userId)
+        .eq('id', uid)
         .maybeSingle();
-
-
-      if (error) {
-        console.error('Error fetching profile:', error);
-        setUser(null);
-      } else {
-        setUser(data as User);
-      }
+      setUser(data as User | null);
+      return data;
     } catch (err) {
-      console.error('Unexpected error fetching profile:', err);
+      console.error('Error fetching profile:', err);
+      return null;
     }
   }, [supabase]);
-  
 
   useEffect(() => {
-    // Check initial session
-
-    const getInitialSession = async () => {
-      setLoading(true);
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-
-        if (session?.user) {
-          setSessionUser(session.user);
-          await fetchProfile(session.user.id);
+    const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
+      if (fbUser) {
+        setFirebaseUser(fbUser);
+        const profile = await fetchProfile(fbUser.uid);
+        if (!profile) {
+          // Auto-create profile on first Google login
+          const newProfile = {
+            id: fbUser.uid,
+            name: fbUser.displayName || '',
+            city: '',
+            preferred_sports: [],
+            location_visible: false,
+            onboarded: false,
+          };
+          await supabase.from('users').upsert(newProfile);
+          setUser(newProfile as unknown as User);
         }
-      } catch (err) {
-        console.error('Error checking initial session:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    getInitialSession();
-
-    // Listen for auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-
-        if (session?.user) {
-          setSessionUser(session.user);
-          await fetchProfile(session.user.id);
-        } else {
-          setSessionUser(null);
-          setUser(null);
-        }
-
-        setLoading(false);
-      }
-    );
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [supabase, fetchProfile]);
-
-  const signInWithPhone = async (phone: string) => {
-    // Standardize Indian phone number format +91XXXXXXXXXX
-    let formattedPhone = phone.trim();
-    if (!formattedPhone.startsWith('+')) {
-      if (formattedPhone.startsWith('91') && formattedPhone.length === 12) {
-        formattedPhone = '+' + formattedPhone;
       } else {
-        formattedPhone = '+91' + formattedPhone;
+        setFirebaseUser(null);
+        setUser(null);
       }
+      setLoading(false);
+    });
+    return () => unsubscribe();
+  }, [fetchProfile, supabase]);
+
+  const signInWithGoogle = async () => {
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      const fbUser = result.user;
+
+      // Check if onboarding is complete
+      const profile = await fetchProfile(fbUser.uid);
+      const onboardingComplete = !!(profile?.onboarded);
+      return { success: true, onboardingComplete };
+    } catch (err: any) {
+      return { success: false, error: err?.message || 'Google sign-in failed' };
     }
-
-    const { data, error } = await supabase.auth.signInWithOtp({
-      phone: formattedPhone,
-    });
-
-    return { data, error, formattedPhone };
   };
-
-  const verifyOTP = async (phone: string, token: string) => {
-    const { data, error } = await supabase.auth.verifyOtp({
-      phone,
-      token,
-      type: 'sms',
-    });
-
-    if (data?.user) {
-      // Fetch profile to see if user has completed onboarding
-      const { data: profile } = await supabase
-        .from('users')
-        .select('name, city')
-        .eq('id', data.user.id)
-        .maybeSingle();
-
-      const onboardingComplete = !!(profile && profile.name && profile.city);
-      return { data, error, onboardingComplete };
-    }
-
-    return { data, error, onboardingComplete: false };
-  };
-
-  const signInWithEmailOtp = async (email: string) => {
-    return supabase.auth.signInWithOtp({
-      email: email.trim().toLowerCase(),
-      options: {
-        shouldCreateUser: true,
-      },
-    });
-  };
-
-  const verifyEmailOtp = async (email: string, token: string) => {
-    const { data, error } = await supabase.auth.verifyOtp({
-      email: email.trim().toLowerCase(),
-      token: token.trim(),
-      type: 'email',
-    });
-
-    if (data?.user) {
-      const { data: profile } = await supabase
-        .from('users')
-        .select('name, city, onboarded')
-        .eq('id', data.user.id)
-        .maybeSingle();
-
-      const onboardingComplete = !!(profile && profile.onboarded);
-      return { data, error, onboardingComplete };
-    }
-
-    return { data, error, onboardingComplete: false };
-  };
-
-  const updateProfile = async (
-  name: string,
-  city: string,
-  preferredSports: Sport[]
-) => {
-  if (!sessionUser) {
-    throw new Error('Not authenticated');
-  }
-
-
-
-  const {
-    data: { user: authUser },
-    error: authError,
-  } = await supabase.auth.getUser();
-
-
-
-  const profileData = {
-    id: sessionUser.id,
-    name,
-    city,
-    preferred_sports: preferredSports,
-    location_visible: false,
-    onboarded: true,
-  };
-
-
-
-  const { data, error } = await supabase
-    .from('users')
-    .upsert(profileData)
-    .select()
-    .maybeSingle();
-
-
-
-  if (!error && data) {
-    setUser(data as User);
-  }
-
-  return { data, error };
-};
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    await fbSignOut(auth);
     router.push('/login');
   };
 
+  const updateProfile = async (name: string, city: string, preferredSports: Sport[]) => {
+    if (!firebaseUser) throw new Error('Not authenticated');
 
-  const signInWithGoogle = async () => {
-    return supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/callback`,
-      },
-    });
+    const profileData = {
+      id: firebaseUser.uid,
+      name,
+      city,
+      preferred_sports: preferredSports,
+      location_visible: false,
+      onboarded: true,
+    };
+
+    const { data, error } = await supabase
+      .from('users')
+      .upsert(profileData)
+      .select()
+      .maybeSingle();
+
+    if (!error && data) setUser(data as User);
+    return { data, error };
   };
 
-  const signInWithEmail = async (email: string, password: string) => {
-    return supabase.auth.signInWithPassword({
-      email: email.trim(),
-      password,
-    });
-  };
-
-  const signUpWithEmail = async (email: string, password: string, name?: string, city?: string) => {
-    const res = await supabase.auth.signUp({
-      email: email.trim().toLowerCase(),
-      password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/callback`,
-        data: {
-          full_name: name || '',
-          city: city || 'Delhi NCR',
-        },
-      },
-    });
-
-    // When email confirmation is required, Supabase returns a user but NO session.
-    const requiresEmailConfirmation = !res.data?.session && !!res.data?.user;
-
-    return { ...res, requiresEmailConfirmation };
-  };
-
-  const verifySignupOtp = async (email: string, token: string) => {
-    const { data, error } = await supabase.auth.verifyOtp({
-      email: email.trim().toLowerCase(),
-      token: token.trim(),
-      type: 'signup',
-    });
-
-    if (data?.user) {
-      const { data: profile } = await supabase
-        .from('users')
-        .select('name, city, onboarded')
-        .eq('id', data.user.id)
-        .maybeSingle();
-
-      const onboardingComplete = !!(profile && profile.onboarded);
-      return { data, error, onboardingComplete };
-    }
-
-    return { data, error, onboardingComplete: false };
-  };
-
-  const resendSignupOtp = async (email: string) => {
-    return supabase.auth.resend({
-      type: 'signup',
-      email: email.trim().toLowerCase(),
-    });
-  };
-
-  
-
-
-
+  // Backward-compat: other pages use sessionUser?.id
+  const sessionUser = firebaseUser ? { id: firebaseUser.uid } : null;
 
   return {
+    firebaseUser,
     sessionUser,
     user,
     loading,
     signInWithGoogle,
-    signInWithPhone,
-    verifyOTP,
-    signInWithEmailOtp,
-    verifyEmailOtp,
-    signInWithEmail,
-    signUpWithEmail,
-    verifySignupOtp,
-    resendSignupOtp,
-    updateProfile,
     signOut,
+    updateProfile,
   };
 }
