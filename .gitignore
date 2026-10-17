@@ -34,3 +34,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# supabase CLI temp
+supabase/.temp/
+
+# local test artifacts
+/map_radar_check.png
