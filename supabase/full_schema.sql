@@ -16,8 +16,11 @@ CREATE TABLE IF NOT EXISTS public.users (
   location GEOGRAPHY(POINT, 4326),
   location_visible BOOLEAN DEFAULT false,
   preferred_sports TEXT[] DEFAULT '{}',
+  onboarded BOOLEAN NOT NULL DEFAULT false,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS onboarded BOOLEAN NOT NULL DEFAULT false;
 
 ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
 
@@ -233,10 +236,19 @@ RETURNS TABLE (
   ORDER BY distance ASC;
 $$ LANGUAGE sql STABLE SECURITY DEFINER;
 
--- 9. Enable Realtime Publications
-ALTER PUBLICATION supabase_realtime ADD TABLE public.game_groups;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.group_members;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.messages;
+-- 9. Enable Realtime Publications (idempotent - safe to re-run)
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname='supabase_realtime' AND schemaname='public' AND tablename='game_groups') THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.game_groups;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname='supabase_realtime' AND schemaname='public' AND tablename='group_members') THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.group_members;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname='supabase_realtime' AND schemaname='public' AND tablename='messages') THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.messages;
+  END IF;
+END $$;
 
 -- 10. Automatically Create User Profile on Auth Signup
 CREATE OR REPLACE FUNCTION public.handle_new_user()

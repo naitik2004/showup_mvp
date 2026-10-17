@@ -121,6 +121,36 @@ export function useAuth() {
     return { data, error, onboardingComplete: false };
   };
 
+  const signInWithEmailOtp = async (email: string) => {
+    return supabase.auth.signInWithOtp({
+      email: email.trim().toLowerCase(),
+      options: {
+        shouldCreateUser: true,
+      },
+    });
+  };
+
+  const verifyEmailOtp = async (email: string, token: string) => {
+    const { data, error } = await supabase.auth.verifyOtp({
+      email: email.trim().toLowerCase(),
+      token: token.trim(),
+      type: 'email',
+    });
+
+    if (data?.user) {
+      const { data: profile } = await supabase
+        .from('users')
+        .select('name, city, onboarded')
+        .eq('id', data.user.id)
+        .maybeSingle();
+
+      const onboardingComplete = !!(profile && profile.onboarded);
+      return { data, error, onboardingComplete };
+    }
+
+    return { data, error, onboardingComplete: false };
+  };
+
   const updateProfile = async (
   name: string,
   city: string,
@@ -145,6 +175,7 @@ export function useAuth() {
     city,
     preferred_sports: preferredSports,
     location_visible: false,
+    onboarded: true,
   };
 
 
@@ -188,9 +219,10 @@ export function useAuth() {
 
   const signUpWithEmail = async (email: string, password: string, name?: string, city?: string) => {
     const res = await supabase.auth.signUp({
-      email: email.trim(),
+      email: email.trim().toLowerCase(),
       password,
       options: {
+        emailRedirectTo: `${window.location.origin}/callback`,
         data: {
           full_name: name || '',
           city: city || 'Delhi NCR',
@@ -198,20 +230,38 @@ export function useAuth() {
       },
     });
 
-    if (res.data?.user && name) {
-      try {
-        await supabase.from('users').upsert({
-          id: res.data.user.id,
-          name,
-          city: city || 'Delhi NCR',
-          preferred_sports: [],
-        });
-      } catch (e) {
-        console.warn('Profile creation fallback:', e);
-      }
+    // When email confirmation is required, Supabase returns a user but NO session.
+    const requiresEmailConfirmation = !res.data?.session && !!res.data?.user;
+
+    return { ...res, requiresEmailConfirmation };
+  };
+
+  const verifySignupOtp = async (email: string, token: string) => {
+    const { data, error } = await supabase.auth.verifyOtp({
+      email: email.trim().toLowerCase(),
+      token: token.trim(),
+      type: 'signup',
+    });
+
+    if (data?.user) {
+      const { data: profile } = await supabase
+        .from('users')
+        .select('name, city, onboarded')
+        .eq('id', data.user.id)
+        .maybeSingle();
+
+      const onboardingComplete = !!(profile && profile.onboarded);
+      return { data, error, onboardingComplete };
     }
 
-    return res;
+    return { data, error, onboardingComplete: false };
+  };
+
+  const resendSignupOtp = async (email: string) => {
+    return supabase.auth.resend({
+      type: 'signup',
+      email: email.trim().toLowerCase(),
+    });
   };
 
   
@@ -226,6 +276,12 @@ export function useAuth() {
     signInWithGoogle,
     signInWithPhone,
     verifyOTP,
+    signInWithEmailOtp,
+    verifyEmailOtp,
+    signInWithEmail,
+    signUpWithEmail,
+    verifySignupOtp,
+    resendSignupOtp,
     updateProfile,
     signOut,
   };

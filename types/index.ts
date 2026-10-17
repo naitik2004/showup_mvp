@@ -42,6 +42,7 @@ export interface User {
   location: { lat: number; lng: number } | null;
   location_visible: boolean;
   preferred_sports: Sport[];
+  onboarded?: boolean;
   created_at: string;
 }
 

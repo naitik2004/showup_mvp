@@ -40,10 +40,15 @@ if (!profile) {
     city: '',
     preferred_sports: [],
     location_visible: false,
+    onboarded: false,
   });
 
   return NextResponse.redirect(`${origin}/onboarding`);
 }
+
+  if (!profile.onboarded) {
+    return NextResponse.redirect(`${origin}/onboarding`);
+  }
 
   return NextResponse.redirect(`${origin}/map`);
 }
