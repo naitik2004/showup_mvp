@@ -29,7 +29,7 @@ components/prelaunch/
   WaitlistSection.tsx                Form and truthful unavailable state
   BallIcon.tsx                       Shared SVG artwork
   SqueezableBall.tsx                 Keyboard/click hero-ball interaction
-  PlayfulBall.module.css             Logo ricochet and hero squeeze motion
+  PlayfulBall.module.css             Hero squeeze motion
   SectionLabel.tsx                   Shared gate label
   hooks/useReveal.ts                 Scoped intersection observer with cleanup
 data/prelaunch.ts                    Content, sample data, app URL, preview date
@@ -108,3 +108,15 @@ Zero-row queries do not prove that RLS protects real records, that transactions
 are safe under concurrent requests, or that signup creates profiles. Those
 checks require authenticated integration tests. No records were read, created,
 changed, or deleted during this audit.
+
+## Shared brand motion
+
+`public/showup/css/brand-motion.css` is the single source for the logo ball's
+four-contact bounce. The Next.js root layout imports it and the standalone
+app links it directly; both logos use `showup-logo-ball`.
+
+`public/showup/css/app-adjustments.css` contains small app-preview layout
+adjustments without expanding its legacy JavaScript. The greeting tennis ball
+is positioned from its placeholder, which is raised by four pixels. Its existing
+positioning routine also re-measures after font loading finishes, preventing
+stale font metrics from offsetting the floating ball.

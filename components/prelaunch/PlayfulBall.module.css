@@ -1,57 +1,3 @@
-.logoBall {
-  position: relative;
-  display: inline-block;
-  width: .92em;
-  height: .86em;
-  margin: 0 .05em;
-}
-
-.logoBall svg {
-  display: block;
-  width: 100%;
-  height: 100%;
-  transform-origin: center;
-  animation: settleIn 650ms ease-out both;
-}
-
-.logoBall::after {
-  content: '';
-  position: absolute;
-  left: 17%;
-  right: 17%;
-  bottom: -.14em;
-  height: .08em;
-  border-radius: 50%;
-  background: currentColor;
-  opacity: .16;
-}
-
-:global(.logo):hover .logoBall svg,
-:global(.logo):focus-visible .logoBall svg {
-  animation: ricochet 1250ms both;
-}
-
-/* Four deliberate contacts: right, left, right, left, then settle. */
-@keyframes ricochet {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  10% { transform: translate(12%, -12%) scale(1.04, .96); }
-  18% { transform: translate(23%, -3%) scale(.72, 1.18); }
-  29% { transform: translate(0, -18%) scale(1.12, .88); }
-  40% { transform: translate(-23%, -2%) scale(.74, 1.16); }
-  51% { transform: translate(0, -14%) scale(1.09, .91); }
-  62% { transform: translate(21%, 0) scale(.78, 1.12); }
-  72% { transform: translate(0, -10%) scale(1.06, .94); }
-  82% { transform: translate(-18%, 0) scale(.83, 1.08); }
-  92% { transform: translate(0, 2%) scale(1.08, .92); }
-}
-
-@keyframes settleIn {
-  0% { transform: translateY(-20%) scale(.95, 1.05); }
-  45% { transform: translateY(5%) scale(1.15, .8); }
-  72% { transform: translateY(-9%) scale(.95, 1.05); }
-  100% { transform: none; }
-}
-
 .heroBallButton {
   display: inline-block;
   width: .78em;
@@ -94,9 +40,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .logoBall svg,
-  :global(.logo):hover .logoBall svg,
-  :global(.logo):focus-visible .logoBall svg,
   .squeezing {
     animation: none;
   }
