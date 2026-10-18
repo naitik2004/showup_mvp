@@ -6,13 +6,13 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { GameGroup, SPORTS, Sport } from '@/types';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useGroups } from '@/lib/hooks/useGroups';
-import { useMockData } from '@/lib/mock-data';
+import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
 
 const sportEmoji = (sport: Sport) => SPORTS.find((item) => item.id === sport)?.emoji || '🏃';
 const sportName = (sport: Sport) => SPORTS.find((item) => item.id === sport)?.name || sport.replace('_', ' ');
 const countIn = (group: GameGroup) => group.member_count || 0;
-const statusFor = (group: GameGroup) => group.status === 'in_progress' ? 'live' : countIn(group) >= group.max_players ? 'full' : 'open';
+const statusFor = (group: GameGroup) => group.status === 'in_progress' ? 'live' : group.status === 'expired' ? 'done' : group.status;
 const center = { lat: 28.6139, lng: 77.209 };
 const formatTime = (value: string) => new Date(value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 const countdown = (value: string, now: number) => {
@@ -100,16 +100,16 @@ function BentoCard({ color, label, value, title, detail, foot, icon, href }: { c
 export default function ShowUpHome() {
   const router = useRouter();
   const { sessionUser, user, loading: authLoading } = useAuth();
-  const { groups } = useGroups();
-  const { invites, joinGame } = useMockData();
+  const { groups, myIds, loading: gamesLoading, error: gamesError } = useGroups();
+  const invites: never[] = [];
   const [selectedSport, setSelectedSport] = useState<Sport | 'all'>('all');
   const [search, setSearch] = useState('');
   const [clock, setClock] = useState('--:--');
   const inviteCount = sessionUser ? invites.length : 0;
-  const myNextMatch = sessionUser ? groups.find((group) => group.status === 'open') || null : null;
+  const myNextMatch = sessionUser ? groups.find((group) => myIds.includes(group.id) && ['open','full','live'].includes(group.status) && new Date(group.scheduled_at).getTime() > Date.now()) || null : null;
   const [now, setNow] = useState(() => Date.now());
-  const [stats] = useState({ joined: 5, hosted: 2, friends: 8 });
-  const displayStats = sessionUser ? stats : { joined: 24, hosted: 6, friends: 38 };
+  const stats = { joined: myIds.length, hosted: groups.filter(g => g.host_id === sessionUser?.id).length, friends: 0 };
+  const displayStats = sessionUser ? stats : { joined: 0, hosted: 0, friends: 0 };
   const isGuestPreview = !authLoading && !sessionUser;
   const streakRef = useRef<HTMLDivElement>(null);
   const ballPlaceholderRef = useRef<HTMLSpanElement>(null);
@@ -212,21 +212,20 @@ export default function ShowUpHome() {
   }, [ballPlaceholderRef, floatingBallRef]);
 
   const sourceGroups = groups;
-  const gamesLoading = false;
-  const gamesError = null;
+
   const visibleGroups = useMemo(() => sourceGroups.filter((group) => {
     const matchesSport = selectedSport === 'all' || group.sport === selectedSport;
     const query = search.trim().toLowerCase();
-    const text = `${sportName(group.sport)} ${group.location_name} ${group.skill_level} ${group.host_name || group.host?.name || ''}`.toLowerCase();
-    return matchesSport && (!query || text.includes(query));
+    const text = `${sportName(group.sport)} ${group.location_name} ${group.skill_level} ${group.status} ${group.host_name || group.host?.name || ''}`.toLowerCase();
+    return !['done','cancelled'].includes(group.status) && matchesSport && (!query || text.includes(query));
   }).sort((a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime()), [sourceGroups, selectedSport, search]);
 
   const doJoin = async (group: GameGroup) => {
     if (!sessionUser?.id) { router.push('/login'); return; }
     if (statusFor(group) !== 'open') { toast.error(`This match is ${statusFor(group)} and cannot be joined.`); return; }
-    // TODO: connect backend — joins live only in client state.
     if (!user) { toast.error('Your profile is still loading. Try again.'); return; }
-    if (!joinGame(group.id, user)) { toast.error('This match is full or unavailable.'); return; }
+    const { error } = await createClient().rpc('join_game', { p_game_id: group.id });
+    if (error) { toast.error(error.message); return; }
     toast.success(`You’re in. ${sportName(group.sport)} at ${group.location_name}.`);
     router.push(`/groups/${group.id}`);
   };

@@ -36,22 +36,16 @@ export default function CreateGroupFlow() {
     if (scheduledAt.getTime() <= Date.now()) { toast.error('Scheduled time must be in the future'); return; }
     setSubmitting(true);
     try {
-      const { data: group, error } = await supabase.from('game_groups').insert({
-        host_id: sessionUser.id,
-        sport,
-        location: `SRID=4326;POINT(${coords.lng} ${coords.lat})`,
-        location_name: venue.trim(),
-        max_players: maxPlayers,
-        skill_level: skill,
-        scheduled_at: scheduledAt.toISOString(),
-        expires_at: isPermanent ? null : new Date(scheduledAt.getTime() + 2 * 60 * 60 * 1000).toISOString(),
-        is_permanent: isPermanent,
-        status: 'open',
-      }).select('id').single();
+      const { data: group, error } = await supabase.rpc('create_game', {
+        p_is_permanent: isPermanent, p_sport: sport, p_venue: venue.trim(), p_max_players: maxPlayers,
+        p_skill_level: skill, p_starts_at: scheduledAt.toISOString(),
+        p_lat: coords.lat, p_lng: coords.lng,
+        p_notes: String(new FormData(event.currentTarget).get('note') || ''),
+      });
       if (error) throw error;
       if (!group) throw new Error('Could not create this match.');
       toast.success('Game group created successfully!');
-      router.push(`/groups/${group.id}`);
+      router.push(`/groups/${group}`);
     } catch (error: any) {
       toast.error(error?.message || 'An error occurred during submission');
     } finally {
@@ -63,13 +57,13 @@ export default function CreateGroupFlow() {
     <main className="wrap" id="app">
       <h1 className="ph">Host a game</h1>
       {!sessionUser ? <div className="card emp"><h3>Sign in to host</h3><p>Sign in to post a match and invite players.</p><Link className="btn hot" style={{ marginTop: 14 }} href="/login">Sign in</Link></div> : (
-        <form className="fm" onSubmit={submit}>
-          <div className="fl"><label htmlFor="sport">SPORT</label><select id="sport" value={sport} onChange={(event) => setSport(event.target.value as Sport)}>{SPORTS.map((item) => <option key={item.id} value={item.id}>{item.emoji} {item.name}</option>)}</select></div>
+        <form className="card fm" onSubmit={submit}>
+          <div className="fl"><label>SPORT</label><div className="chips">{SPORTS.map(item => <label className="chip" key={item.id}><input type="radio" name="sport" value={item.id} checked={sport === item.id} onChange={() => setSport(item.id)} />{item.emoji} {item.name}</label>)}</div></div>
           <div className="fl"><label htmlFor="venue">VENUE</label><input id="venue" name="venue" value={venue} onChange={(event) => setVenue(event.target.value)} placeholder="e.g. Sector 14 Park, Turf Ground" maxLength={120} /></div>
-          <div className="r2"><div className="fl"><label htmlFor="day">DATE</label><select id="day" value={day} onChange={(event) => setDay(event.target.value)}><option value="0">Today</option><option value="1">Tomorrow</option><option value="2">In 2 days</option></select></div><div className="fl"><label htmlFor="time">START TIME</label><input id="time" type="time" value={time} onChange={(event) => setTime(event.target.value)} /></div></div>
+          <div className="r2"><div className="fl"><label htmlFor="day">DAY</label><select id="day" value={day} onChange={(event) => setDay(event.target.value)}><option value="0">Today</option><option value="1">Tomorrow</option><option value="2">In 2 days</option></select></div><div className="fl"><label htmlFor="time">START TIME</label><input id="time" type="time" value={time} onChange={(event) => setTime(event.target.value)} /></div></div>
           <div className="r2"><div className="fl"><label htmlFor="skill">SKILL LEVEL</label><select id="skill" value={skill} onChange={(event) => setSkill(event.target.value as SkillLevel)}><option value="beginner">Beginner</option><option value="intermediate">Intermediate</option><option value="pro">Advanced</option></select></div><div className="fl"><label htmlFor="max">MAX PLAYERS</label><input id="max" type="number" min={2} max={22} value={maxPlayers} onChange={(event) => setMaxPlayers(Number(event.target.value))} /></div></div>
           <div className="fl"><label>TYPE</label><div className="chips"><label className="chip"><input type="radio" name="type" checked={!isPermanent} onChange={() => setIsPermanent(false)} />One-off match</label><label className="chip"><input type="radio" name="type" checked={isPermanent} onChange={() => setIsPermanent(true)} />Permanent group</label></div></div>
-          <div className="fl"><label htmlFor="note">NOTE (OPTIONAL)</label><input id="note" name="note" readOnly placeholder="Bring your own racket" title="Match notes are not saved by the current backend" /></div>
+          <div className="fl"><label htmlFor="note">NOTE (OPTIONAL)</label><input id="note" name="note" maxLength={80} placeholder="Bring your own racket" /></div>
           <button className="btn hot" style={{ justifySelf: 'start' }} disabled={submitting}>{submitting ? 'Publishing…' : 'Publish match'}</button>
         </form>
       )}
