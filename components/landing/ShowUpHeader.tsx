@@ -47,6 +47,10 @@ export default function ShowUpHeader() {
           <circle cx="50" cy="50" r="47" fill="#d8f03c" stroke="#15130f" strokeWidth="4" />
           <path d="M13 22C35 40 35 60 13 78M87 22C65 40 65 60 87 78" fill="none" stroke="#fff" strokeWidth="6" strokeLinecap="round" />
         </symbol>
+        <symbol id="showup-basketball" viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="47" fill="#db762e" stroke="#15130f" strokeWidth="4" />
+          <path d="M50 4C33 20 33 80 50 96M50 4C67 20 67 80 50 96M5 34C28 47 72 47 95 34M5 66C28 53 72 53 95 66" fill="none" stroke="#15130f" strokeWidth="4" />
+        </symbol>
       </svg>
       <header className="bar">
         <div className="wrap">

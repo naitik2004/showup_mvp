@@ -37,6 +37,7 @@ h1,h2,h3{font-family:var(--sans);font-stretch:125%;font-weight:900;text-transfor
 .card h3{font-size:22px;margin-bottom:14px}
 .hi{display:grid;grid-template-columns:1.3fr 1fr;gap:30px;align-items:end;margin-bottom:28px}
 .hi h1{font-size:clamp(40px,6.6vw,92px);margin-top:12px}.hi h1 .bl{width:.6em;height:.6em;margin-left:.06em;animation:ld 1.4s .5s both}
+.hi h1 .good-word{display:inline-flex;align-items:center;white-space:nowrap;gap:.025em}.hi h1 .word-ball{display:inline-block;flex:none;width:.6em;height:.6em;vertical-align:-.045em}.hi h1 .bl{display:inline-block;flex:none;vertical-align:-.045em}.hi h1 .bl svg{display:block;width:100%;height:100%}
 .sub{font-size:clamp(22px,2.4vw,32px);line-height:1.1}
 .pass{display:grid;grid-template-columns:1fr 210px;background:var(--court);color:var(--chalk);border-radius:20px;margin-bottom:30px;position:relative;overflow:hidden}
 .pass::before,.pass::after{content:'';position:absolute;right:196px;width:26px;height:26px;border-radius:50%;background:var(--chalk)}.pass::before{top:-13px}.pass::after{bottom:-13px}
@@ -107,7 +108,7 @@ section.s{padding:clamp(80px,10vw,140px) 0}
 .sh{display:grid;gap:clamp(20px,3vw,34px);margin-bottom:clamp(34px,5vw,64px)}
 
 
-#fb{position:fixed;left:0;top:0;z-index:50;pointer-events:none;filter:drop-shadow(0 8px 5px #15130f45)}#fb i{display:block;width:100%;height:100%;transform-origin:50% 100%}#fb svg{width:100%;height:100%;display:block}
+#fb{position:fixed;left:0;top:0;z-index:50;pointer-events:none;filter:drop-shadow(0 8px 5px #15130f45);visibility:hidden}#fb i{display:block;width:100%;height:100%;transform-origin:50% 100%}#fb svg{width:100%;height:100%;display:block}
 .hi h1 .bl{visibility:hidden}
 .sec{margin-top:clamp(72px,9vw,128px)}.sh{display:grid;gap:12px;margin-bottom:28px}.sh h2{font-size:clamp(40px,7vw,96px)}.sh p{max-width:54ch;color:var(--mute)}
 .fx{border-top:2px solid var(--ink)}.fx a{display:grid;grid-template-columns:minmax(150px,1fr) 2fr 30px;gap:24px;align-items:baseline;padding:26px 10px;border-bottom:2px solid var(--ink);transition:background .25s,color .25s,padding .25s}

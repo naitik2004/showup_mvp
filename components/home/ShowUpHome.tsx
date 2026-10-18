@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { GameGroup, SPORTS, Sport } from '@/types';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useMap } from '@/lib/hooks/useMap';
@@ -111,9 +111,10 @@ export default function ShowUpHome() {
   const [myNextMatch, setMyNextMatch] = useState<GameGroup | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const [stats, setStats] = useState({ joined: 0, hosted: 0, friends: 0 });
-  const streakRef = useMemo(() => ({ current: null as HTMLDivElement | null }), []);
-  const ballPlaceholderRef = useMemo(() => ({ current: null as SVGSVGElement | null }), []);
-  const floatingBallRef = useMemo(() => ({ current: null as HTMLDivElement | null }), []);
+  const displayStats = sessionUser ? stats : { joined: 24, hosted: 6, friends: 38 };
+  const streakRef = useRef<HTMLDivElement>(null);
+  const ballPlaceholderRef = useRef<HTMLSpanElement>(null);
+  const floatingBallRef = useRef<HTMLDivElement>(null);
 
   const refreshGroups = useCallback(() => { void refetch(); }, [refetch]);
   const onInsert = useCallback((newGroup: GameGroup) => {
@@ -162,6 +163,11 @@ export default function ShowUpHome() {
     const position = (atBottom: boolean) => {
       const size = Number(ball.dataset.size || 0);
       const mobile = window.innerWidth < 760;
+      if (!atBottom) {
+        const rect = placeholder.getBoundingClientRect();
+        ball.dataset.x = String(rect.left);
+        ball.dataset.y = String(rect.top + window.scrollY);
+      }
       ball.style.left = `${atBottom ? window.innerWidth - size - (mobile ? 16 : 26) : Number(ball.dataset.x)}px`;
       ball.style.transform = `translateY(${atBottom ? window.innerHeight - size - (mobile ? 90 : 16) : Number(ball.dataset.y)}px)`;
       const svg = ball.querySelector('svg');
@@ -186,7 +192,7 @@ export default function ShowUpHome() {
       if (atBottom && !bouncing) { bouncing = true; void bounce(++token); }
       else if (!atBottom && bouncing) { bouncing = false; token++; }
     };
-    const initialize = () => {
+    const initialize = (show = true) => {
       const rect = placeholder.getBoundingClientRect();
       ball.dataset.x = String(rect.left);
       ball.dataset.y = String(rect.top + window.scrollY);
@@ -195,14 +201,25 @@ export default function ShowUpHome() {
       ball.style.height = `${rect.width}px`;
       down = false;
       position(false);
+      if (show) ball.style.visibility = 'visible';
       update();
     };
-    initialize();
+    let initialized = false;
+    const finishInitialization = () => {
+      if (initialized) return;
+      initialized = true;
+      initialize(true);
+    };
+    initialize(false);
+    const fallbackTimer = window.setTimeout(finishInitialization, 700);
+    void document.fonts.ready.then(() => window.setTimeout(finishInitialization, 700));
     window.addEventListener('scroll', update, { passive: true });
-    window.addEventListener('resize', initialize);
+    const onResize = () => initialize(true);
+    window.addEventListener('resize', onResize);
     return () => {
+      window.clearTimeout(fallbackTimer);
       window.removeEventListener('scroll', update);
-      window.removeEventListener('resize', initialize);
+      window.removeEventListener('resize', onResize);
       token++;
     };
   }, [ballPlaceholderRef, floatingBallRef]);
@@ -261,11 +278,15 @@ export default function ShowUpHome() {
   const nextName = visibleGroups[0] ? `${sportName(visibleGroups[0].sport)} at ${visibleGroups[0].location_name}` : 'Your next match';
 
   return (
+    <>
     <main className="wrap" id="app">
       <section className="hi">
         <div>
           <span className="lb">{new Date().toLocaleDateString([], { weekday: 'long', day: 'numeric', month: 'long' })}</span>
-          <h1><span>{greeting()}</span>{user?.name ? <>,<br />{user.name.split(' ')[0]}</> : null}<svg className="bl" ref={ballPlaceholderRef}><use href="#showup-ball" /></svg></h1>
+          <h1 aria-label={`${greeting()}${user?.name ? `, ${user.name.split(' ')[0]}` : ''}`}>
+            <span className="good-word"><span>G</span><svg className="word-ball" aria-hidden="true"><use href="#showup-basketball" /></svg><span className="bl" ref={ballPlaceholderRef} aria-hidden="true"><svg><use href="#showup-ball" /></svg></span><span>D</span></span>
+            <br /><span>{greeting().replace(/^Good\s+/, '')}</span>{user?.name ? <>,<br />{user.name.split(' ')[0]}</> : null}
+          </h1>
         </div>
         <div>
           <div className="ser sub">{openGroups.length} games still have room near you. {sessionUser && inviteCount ? `${inviteCount} friends want you in.` : 'Pick one and show up.'}</div>
@@ -302,7 +323,7 @@ export default function ShowUpHome() {
               const value = seed / 2147483647;
               return <i key={index} className={value < 0.42 ? '' : value < 0.78 ? 'p' : 'm'} style={{ '--n': index } as React.CSSProperties} />;
             })}</div>
-            <div className="sn"><div><b>{String(stats.joined).padStart(2, '0')}</b><span>Joined</span></div><div><b>{String(stats.hosted).padStart(2, '0')}</b><span>Hosted</span></div><div><b>{String(stats.friends).padStart(2, '0')}</b><span>Friends</span></div><div><b>—</b><span>Rating</span></div></div>
+            <div className="sn"><div><b>{String(displayStats.joined).padStart(2, '0')}</b><span>Joined</span></div><div><b>{String(displayStats.hosted).padStart(2, '0')}</b><span>Hosted</span></div><div><b>{String(displayStats.friends).padStart(2, '0')}</b><span>Friends</span></div><div><b>{sessionUser ? '—' : '96%'}</b><span>{sessionUser ? 'Rating' : 'Showed up'}</span></div></div>
           </div>
           <BentoCard color="c1" label="Organize" value="1 minute" title="Host a game" detail="Pick a sport, a place, a time. Players find you." foot={`${stats.hosted} games hosted`} icon="+" href="/groups/create" />
           <BentoCard color="c2" label="Discover" value="1 tap" title="Find a match" detail="Open seats near you. The last seat goes to exactly one player." foot={`${openGroups.length} open near you`} icon="→" href={nextHref} />
@@ -331,7 +352,8 @@ export default function ShowUpHome() {
       <section className="sec"><div className="band"><div><span className="lb" style={{ color: '#f3efe4aa' }}>Built for trust</span><h2>Play with people you can <span className="ser">rely on</span></h2></div><ul><li><b>Members-only chat</b>Only players in a match can read or write in its chat.</li><li><b>Block and report</b>Blocked players vanish from your chat, requests and invites.</li><li><b>Reviews after every game</b>Stars and notes from the people who actually played with them.</li><li><b>Hosts stay in charge</b>Start, end or cancel a match and remove players who do not fit.</li></ul></div></section>
       <section className="sec"><div className="cta"><h2>{sessionUser ? 'Your next game is one tap away' : 'Find your next game tonight'}</h2><div className="acts">{sessionUser ? <><Link className="btn" href="/groups/create">Host a game</Link><Link className="btn gh" href="/profile/friends">Invite friends</Link></> : <Link className="btn" href="/login">Create free account</Link>}</div></div></section>
       <footer className="ft"><span className="mono">© 2026 ShowUp. Find players. Join matches. Build your sports network.</span><span><Link href="/">Games</Link><Link href="/profile/friends">Friends</Link><Link href="/profile">Profile</Link></span></footer>
-      <div id="fb" ref={floatingBallRef} aria-hidden="true"><i><svg><use href="#showup-ball" /></svg></i></div>
     </main>
+    <div id="fb" ref={floatingBallRef} aria-hidden="true"><i><svg><use href="#showup-ball" /></svg></i></div>
+    </>
   );
 }
