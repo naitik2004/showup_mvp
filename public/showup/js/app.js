@@ -131,11 +131,32 @@ document.addEventListener('mouseout',e=>{const o=e.target.closest&&e.target.clos
 let tok=0,bn=0;
 const greet=()=>{const h=new Date().getHours();return h>=5&&h<12?'Good morning':h>=12&&h<17?'Good afternoon':h>=17&&h<21?'Good evening':'Good night'};
 setInterval(()=>{const g=$('#gt'),t=greet().slice(4);if(g&&g.textContent!=t)g.textContent=t},3e4);
-const pos=()=>{const b=$('#fb');if(!b)return;const d=b.dataset,s=+d.s,m=innerWidth<760,mx=document.documentElement.scrollHeight-innerHeight,p=mx>0?Math.min(1,scrollY/mx):0,dn=scrollY>12,xr=innerWidth-s-(m?16:26),x=+d.x+(xr-+d.x)*(dn?p:0);b.style.left=x+'px';b.style.transform=`translateY(${dn?innerHeight-s-(m?90:16):+d.y}px)`;b.querySelector('svg').style.rotate=(x-+d.x)/(Math.PI*s)*360+'deg'};
+const pos=()=>{
+  const ball=$('#fb');
+  if(!ball)return;
+  const data=ball.dataset,size=+data.s,mobile=innerWidth<760;
+  const maxScroll=document.documentElement.scrollHeight-innerHeight;
+  const progress=maxScroll>0?Math.min(1,scrollY/maxScroll):0;
+  const falling=scrollY>12;
+  const rightEdge=innerWidth-size-(mobile?16:26);
+  const x=+data.x+(rightEdge-+data.x)*(falling?progress:0);
+  // Fixed-position artwork needs the current viewport anchor, not a saved
+  // document coordinate that becomes stale after fonts load or scrolling.
+  const anchor=$('.hi .o2');
+  const restingTop=anchor?anchor.getBoundingClientRect().top:+data.y;
+  ball.style.left=x+'px';
+  ball.style.transform=`translateY(${falling?innerHeight-size-(mobile?90:16):restingTop}px)`;
+  ball.querySelector('svg').style.rotate=(x-+data.x)/(Math.PI*size)*360+'deg';
+};
 const upd=()=>{const b=$('#fb');if(!b)return;const dn=scrollY>12,mx=document.documentElement.scrollHeight-innerHeight,end=mx>40&&scrollY>=mx-8;if(dn!==b._d){b._d=dn;b.style.transitionTimingFunction=dn?'cubic-bezier(.55,0,.9,.5)':'cubic-bezier(.2,.7,.2,1)';if(dn)setTimeout(()=>{if(b._d&&$('#fb')===b&&!bn)bounce(++tok,[38,18,8])},680)}pos();if(end&&!bn){bn=1;bounce(++tok)}else if(!end&&bn){bn=0;tok++}};
 const bounce=async(t,hs=[140,80,44,22,10])=>{const i=$('#fb i');for(const h of hs){if(t!=tok||!i)return;await i.animate([{transform:'scale(1.22,.78)',easing:'cubic-bezier(.2,.6,.4,1)'},{transform:`translateY(${-h}px)`,offset:.5,easing:'cubic-bezier(.6,0,.9,.5)'},{transform:'scale(1.22,.78)'}],{duration:320+h*4}).finished.catch(()=>0)}};
 const ballInit=()=>{const f=$('#fb');f&&f.remove();const ph=$('.hi .o2');if(!ph)return;const r=ph.getBoundingClientRect(),b=document.createElement('div');b.id='fb';b.innerHTML='<i><svg><use href="#ball"/></svg></i>';b.style.width=b.style.height=r.width+'px';Object.assign(b.dataset,{x:r.left,y:r.top+scrollY,s:r.width});document.body.appendChild(b);pos();bn=0;tok++;upd()};
 document.fonts&&document.fonts.ready.then(()=>{if($('#fb')&&scrollY<=12)ballInit()});addEventListener('scroll',upd,{passive:true});addEventListener('resize',()=>{if($('#fb'))ballInit()});
+// Variable fonts can load after the initial greeting renders. Keep the floating
+// tennis ball anchored to the final letter position instead of stale metrics.
+if(document.fonts)document.fonts.addEventListener('loadingdone',()=>{
+  requestAnimationFrame(()=>{if($('#fb'))ballInit()});
+});
 const bc=(c,a,b,h,s,st,t,l)=>`<a class="bk hc ${c}" href="${l}"><div class="tp"><span>${a}</span><span>${b}</span></div><div><h3>${h}</h3><p class="ser">${s}</p></div><div class="bt"><span class="mono">${st}</span><i class="rb">${t}</i></div></a>`;
 const bento=()=>{let s=7;const r=()=>(s=s*16807%2147483647)/2147483647,cells=Array.from({length:84},(_,i)=>{const v=r();return`<i class="${v<.42?'':v<.78?'p':'m'}" style="--n:${i}"></i>`}).join(''),me=S.me,p=me&&P(me),z=x=>String(x).padStart(2,'0'),o=S.g.filter(g=>stt(g)=='open'),fg=o[0]||S.g[0],rt=me?rate(me):0,
 n=me?p.j+S.g.filter(g=>g.m.includes(me)).length:24,hs=me?p.h+S.g.filter(g=>g.host==me).length:6;

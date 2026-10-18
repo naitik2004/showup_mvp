@@ -1,0 +1,5 @@
+/* The floating tennis ball measures this placeholder when positioning itself. */
+.hi .o2 {
+  position: relative;
+  top: -4px;
+}

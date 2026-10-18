@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import './showup-reference.css';
+import '@/public/showup/css/brand-motion.css';
 import { Toaster } from '@/components/ui/sonner';
 import AppShell from '@/components/AppShell';
 
