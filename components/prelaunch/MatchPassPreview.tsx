@@ -36,7 +36,7 @@ export default function MatchPassPreview() {
               <div className="ticketStub">
                 <div className="mono">Seat</div><strong>{pass.seat}</strong>
                 <div className="barcode" aria-hidden="true">
-                  {Array.from({ length: 26 }, (_, index) => <i key={index} style={{ width: 1 + ((index * 7 + selected) % 4) }} />)}
+                  {Array.from({ length: 26 }, (_, index) => <i key={index} style={{ flexGrow: 1 + ((index * 7 + selected) % 4) }} />)}
                 </div>
               </div>
             </div>

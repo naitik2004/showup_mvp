@@ -27,6 +27,10 @@ components/prelaunch/
   LaunchCountdown.tsx                Countdown display
   WaitlistSection.tsx                Form and truthful unavailable state
   BallIcon.tsx                       Shared SVG artwork
+  SqueezableBall.tsx                 Keyboard/click hero-ball interaction
+  PlayfulBall.module.css             Logo ricochet and hero squeeze motion
+  LockedWaitlistButton.tsx           Decorative metallic chains and padlock
+  LockedWaitlistButton.module.css    Scoped chain and lock animation
   SectionLabel.tsx                   Shared gate label
   hooks/useReveal.ts                 Scoped intersection observer with cleanup
 data/prelaunch.ts                    Content, sample data, app URL, preview date
@@ -51,6 +55,10 @@ by the native prelaunch page (except the old app header).
 - The reference launch date remains in `data/prelaunch.ts`; confirm it before
   announcing a public launch. Countdown days support more than two digits.
 - All six feature rows retain the corrected readable hover background.
+- The logo ball makes four controlled side contacts on hover. The hero O is a
+  keyboard-accessible squeezable ball. Motion respects reduced-motion settings.
+- Waitlist submission shows a local chain-and-lock sequence before the closed
+  registration notice; it never sends or saves the email address.
 
 ## Backend configuration and remaining work
 

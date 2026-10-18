@@ -1,4 +1,4 @@
-import BallIcon from './BallIcon';
+import SqueezableBall from './SqueezableBall';
 import SampleGamesBoard from './SampleGamesBoard';
 
 export default function PrelaunchHero() {
@@ -7,8 +7,8 @@ export default function PrelaunchHero() {
       <div className="container">
         <div className="sectionLabel mono"><span>ShowUp / Local sports, organised</span><span>Private beta</span></div>
         <h1 aria-label="Show up.">
-          <span className="headlineLine"><span>Show</span></span>{' '}
-          <span className="headlineLine"><span>up<BallIcon className="heroBall" /></span></span>
+          <span className="headlineLine"><span>Sh<SqueezableBall />w</span></span>{' '}
+          <span className="headlineLine"><span>up</span></span>
         </h1>
         <div className="heroCopy">
           <div className="serif">Find players. Join matches. Build your sports network.</div>
