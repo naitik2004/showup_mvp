@@ -1,5 +1,5 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider } from 'firebase/auth';
+import { Auth, getAuth, GoogleAuthProvider } from 'firebase/auth';
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -11,7 +11,12 @@ const firebaseConfig = {
 };
 
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
-const auth = getAuth(app);
+// Next pre-renders client components on the server. Firebase Auth validates
+// the API key during initialization, so defer Auth until the browser and only
+// initialize it when the public Firebase configuration is present.
+const auth: Auth | null = typeof window !== 'undefined' && firebaseConfig.apiKey
+  ? getAuth(app)
+  : null;
 const googleProvider = new GoogleAuthProvider();
 
 export { app, auth, googleProvider };

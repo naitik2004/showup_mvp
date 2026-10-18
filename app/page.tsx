@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import LandingPage from '@/components/landing/LandingPage';
+import ShowUpHome from '@/components/home/ShowUpHome';
 
 export const metadata: Metadata = {
   title: 'ShowUp — Find Players. Drop A Pin. Show Up.',
@@ -7,5 +7,5 @@ export const metadata: Metadata = {
 };
 
 export default function HomePage() {
-  return <LandingPage />;
+  return <ShowUpHome />;
 }

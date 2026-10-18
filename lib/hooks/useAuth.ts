@@ -2,50 +2,46 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { signInWithPopup, signOut as fbSignOut, onAuthStateChanged } from 'firebase/auth';
-import { createClient } from '@/lib/supabase/client';
 import { auth, googleProvider } from '@/lib/firebase';
 import { User, Sport } from '@/types';
 import { useRouter } from 'next/navigation';
 
 export function useAuth() {
-  const supabase = createClient();
   const router = useRouter();
   const [firebaseUser, setFirebaseUser] = useState<any>(null);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchProfile = useCallback(async (uid: string) => {
+  const fetchProfile = useCallback(async (fbUser: any) => {
     try {
-      const { data } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', uid)
-        .maybeSingle();
-      setUser(data as User | null);
-      return data;
+      const token = await fbUser.getIdToken();
+      const response = await fetch('/api/auth/profile', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Could not load your profile.');
+      setUser(result.profile as User);
+      return result.profile as User;
     } catch (err) {
       console.error('Error fetching profile:', err);
+      setUser(null);
       return null;
     }
-  }, [supabase]);
+  }, []);
 
   useEffect(() => {
+    if (!auth) {
+      setLoading(false);
+      return;
+    }
     const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
       if (fbUser) {
         setFirebaseUser(fbUser);
-        const profile = await fetchProfile(fbUser.uid);
+        const profile = await fetchProfile(fbUser);
         if (!profile) {
-          // Auto-create profile on first Google login
-          const newProfile = {
-            id: fbUser.uid,
-            name: fbUser.displayName || '',
-            city: '',
-            preferred_sports: [],
-            location_visible: false,
-            onboarded: false,
-          };
-          await supabase.from('users').upsert(newProfile);
-          setUser(newProfile as unknown as User);
+          console.error('The signed-in Firebase user has no ShowUp profile.');
         }
       } else {
         setFirebaseUser(null);
@@ -54,15 +50,16 @@ export function useAuth() {
       setLoading(false);
     });
     return () => unsubscribe();
-  }, [fetchProfile, supabase]);
+  }, [fetchProfile]);
 
   const signInWithGoogle = async () => {
     try {
+      if (!auth) throw new Error('Firebase sign-in is not configured.');
       const result = await signInWithPopup(auth, googleProvider);
       const fbUser = result.user;
 
       // Check if onboarding is complete
-      const profile = await fetchProfile(fbUser.uid);
+      const profile = await fetchProfile(fbUser);
       const onboardingComplete = !!(profile?.onboarded);
       return { success: true, onboardingComplete };
     } catch (err: any) {
@@ -71,34 +68,31 @@ export function useAuth() {
   };
 
   const signOut = async () => {
+    if (!auth) return;
     await fbSignOut(auth);
     router.push('/login');
   };
 
   const updateProfile = async (name: string, city: string, preferredSports: Sport[]) => {
     if (!firebaseUser) throw new Error('Not authenticated');
-
-    const profileData = {
-      id: firebaseUser.uid,
-      name,
-      city,
-      preferred_sports: preferredSports,
-      location_visible: false,
-      onboarded: true,
-    };
-
-    const { data, error } = await supabase
-      .from('users')
-      .upsert(profileData)
-      .select()
-      .maybeSingle();
-
-    if (!error && data) setUser(data as User);
-    return { data, error };
+    try {
+      const token = await firebaseUser.getIdToken();
+      const response = await fetch('/api/auth/profile', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, city, preferred_sports: preferredSports, onboarded: true }),
+      });
+      const result = await response.json();
+      if (!response.ok) return { data: null, error: new Error(result.error || 'Could not update your profile.') };
+      setUser(result.profile as User);
+      return { data: result.profile as User, error: null };
+    } catch (error: any) {
+      return { data: null, error };
+    }
   };
 
   // Backward-compat: other pages use sessionUser?.id
-  const sessionUser = firebaseUser ? { id: firebaseUser.uid } : null;
+  const sessionUser = user ? { id: user.id } : null;
 
   return {
     firebaseUser,

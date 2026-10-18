@@ -1,271 +1,78 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
+import { useEffect, useMemo, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { useAuth } from '@/lib/hooks/useAuth';
+import { SPORTS } from '@/types';
+import { toast } from 'sonner';
 
-export default function ProfilePage() {
-    const params = useParams();
-    const router = useRouter();
-    const supabase = createClient();
+export default function PlayerProfilePage() {
+  const { id } = useParams<{ id: string }>();
+  const router = useRouter();
+  const { sessionUser } = useAuth();
+  const supabase = useMemo(() => createClient(), []);
+  const [profile, setProfile] = useState<any>(null);
+  const [status, setStatus] = useState<'none' | 'pending' | 'accept' | 'friends'>('none');
+  const [friendshipId, setFriendshipId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-    const [currentUserId, setCurrentUserId] = useState('');
-    const [friendStatus, setFriendStatus] = useState('none');
-
-
-    const profileId = params.id as string;
-
-    const [profile, setProfile] = useState<any>(null);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        if (!profileId) return;
-
-        const fetchProfile = async () => {
-
-            const {
-                data: { user },
-            } = await supabase.auth.getUser();
-
-            setCurrentUserId(user?.id || '');
-            if (user) {
-                await checkFriendship(user.id, profileId);
-            }
-
-            const { data, error } = await supabase
-                .from('users')
-                .select('*')
-                .eq('id', profileId)
-                .single();
-
-            if (error) {
-                console.error(error);
-            } else {
-                setProfile(data);
-            }
-
-            setLoading(false);
-        };
-
-        fetchProfile();
-    }, [profileId,]);
-
-    const checkFriendship = async (
-        currentUserId: string,
-        profileId: string
-    ) => {
-        try {
-            const { data: friendship } = await supabase
-                .from('friendships')
-                .select('*')
-                .or(
-                    `and(user_a.eq.${currentUserId},user_b.eq.${profileId}),and(user_a.eq.${profileId},user_b.eq.${currentUserId})`
-                )
-                .maybeSingle();
-
-            if (friendship) {
-                if (friendship.status === 'accepted') {
-                    setFriendStatus('friends');
-                } else if (friendship.status === 'pending') {
-                    if (friendship.user_a === currentUserId) {
-                        setFriendStatus('pending');
-                    } else {
-                        setFriendStatus('accept');
-                    }
-                }
-            }
-        } catch (err) {
-            console.warn('Error checking friendship:', err);
-        }
+  useEffect(() => {
+    if (!id) return;
+    let active = true;
+    const load = async () => {
+      setLoading(true);
+      setError('');
+      const { data, error: profileError } = await supabase.from('users').select('*').eq('id', id).maybeSingle();
+      if (!active) return;
+      if (profileError) setError(profileError.message);
+      setProfile(data);
+      if (sessionUser?.id) {
+        const { data: friendship } = await supabase.from('friendships').select('*').or(`and(user_a.eq.${sessionUser.id},user_b.eq.${id}),and(user_a.eq.${id},user_b.eq.${sessionUser.id})`).maybeSingle();
+        if (active && friendship) setFriendshipId(friendship.id);
+        if (active && friendship?.status === 'accepted') setStatus('friends');
+        else if (active && friendship?.status === 'pending') setStatus(friendship.user_a === sessionUser.id ? 'pending' : 'accept');
+      }
+      setLoading(false);
     };
+    void load();
+    return () => { active = false; };
+  }, [id, sessionUser?.id, supabase]);
 
-    const sendFriendRequest = async () => {
-        if (!currentUserId) {
-            router.push('/login');
-            return;
-        }
-
-        const { error } = await supabase
-            .from('friendships')
-            .insert({
-                user_a: currentUserId,
-                user_b: profileId,
-                status: 'pending',
-            });
-
-        if (error) {
-            console.error(error);
-            return;
-        }
-        setFriendStatus('pending');
-    };
-
-    if (loading) {
-        return (
-            <div className="min-h-screen bg-[#0A0A0B] flex items-center justify-center text-cream">
-                Loading profile...
-            </div>
-        );
+  const addFriend = async () => {
+    if (!sessionUser?.id) { router.push('/login'); return; }
+    if (status === 'accept' && friendshipId) {
+      const { error: acceptError } = await supabase.from('friendships').update({ status: 'accepted' }).eq('id', friendshipId);
+      if (acceptError) { toast.error(acceptError.message); return; }
+      setStatus('friends');
+      toast.success('Friend request accepted.');
+      return;
     }
+    const { error: requestError } = await supabase.from('friendships').insert({ user_a: sessionUser.id, user_b: id, status: 'pending' });
+    if (requestError) { toast.error(requestError.message); return; }
+    setStatus('pending');
+    toast.success('Friend request sent.');
+  };
 
-    if (!profile) {
-        return <div className="min-h-screen bg-[#0A0A0B] flex items-center justify-center text-cream">User not found</div>;
-    }
+  if (loading) return <main className="wrap" id="app"><section className="card emp">Loading profile…</section></main>;
+  if (error) return <main className="wrap" id="app"><section className="card emp" role="alert"><h3>Profile couldn&apos;t load</h3><p>{error}</p><button className="btn gh" style={{ marginTop: 14 }} onClick={() => location.reload()}>Retry</button></section></main>;
+  if (!profile) return <main className="wrap" id="app"><section className="card emp"><h3>Player not found</h3><Link className="btn gh" style={{ marginTop: 14 }} href="/">Back to games</Link></section></main>;
 
-    return (
-        <div className="min-h-screen bg-[#0A0A0B] text-cream">
-            <div className="max-w-5xl mx-auto p-6">
-                <button
-                    onClick={() => router.back()}
-                    className="mb-4"
-                >
-                    ← Back
-                </button>
-
-                <div className="bg-surface/40 border border-muted rounded-3xl p-6">
-
-                    <div className="flex justify-between items-center">
-
-                        <div className="flex items-center gap-5">
-
-                            <div className="relative">
-                                <div className="w-24 h-24 rounded-full border-4 border-primary flex items-center justify-center text-4xl font-bold bg-black">
-                                    {profile.name?.charAt(0).toUpperCase()}
-                                </div>
-
-                                <div className="absolute bottom-1 right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-black" />
-                            </div>
-
-                            <div>
-                                <h1 className="text-4xl font-black">
-                                    {profile.name}
-                                </h1>
-
-                                <p className="text-muted-foreground">
-                                    📍 {profile.city}
-                                </p>
-
-                                <p className="text-xs uppercase tracking-widest text-muted-foreground mt-2">
-                                    Member Since {new Date(profile.created_at).getFullYear()}
-                                </p>
-                            </div>
-
-                        </div>
-
-                        {currentUserId !== profileId && (
-                            <button
-                                onClick={sendFriendRequest}
-                                disabled={friendStatus !== 'none'}
-                                className="px-5 py-3 rounded-2xl bg-primary text-black font-bold"
-                            >
-                                {friendStatus === 'none' && 'Add Friend'}
-                                {friendStatus === 'pending' && 'Pending'}
-                                {friendStatus === 'accept' && 'Accept Request'}
-                                {friendStatus === 'friends' && 'Friends'}
-                            </button>
-                        )}
-
-
-
-
-                    </div>
-
-                </div>
-
-            
-
-
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
-                <div className="bg-surface/40 rounded-3xl p-6 text-center aspect-square flex flex-col justify-center">
-                    <p className="text-3xl font-bold text-primary">
-                        {profile.games_joined}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                        Joined
-                    </p>
-                </div>
-
-                <div className="bg-surface/40 rounded-3xl p-6 text-center aspect-square flex flex-col justify-center">
-                    <p className="text-3xl font-bold text-primary">
-                        {profile.games_hosted}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                        Hosted
-                    </p>
-                </div>
-
-                <div className="bg-surface/40 rounded-3xl p-6 text-center aspect-square flex flex-col justify-center">
-                    <p className="text-3xl font-bold text-primary">
-                        {profile.sports?.length || 0}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                        Sports
-                    </p>
-                </div>
-
-                <div className="bg-surface/40 rounded-3xl p-6 text-center aspect-square flex flex-col justify-center">
-                    <p className="text-3xl font-bold text-primary">
-                        0
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                        Friends
-                    </p>
-                </div>
-            </div>
-
-            <div className="mt-8 bg-surface/40 rounded-3xl border border-primary/20 p-6">
-
-                <p className="text-xs uppercase tracking-[0.4em] text-muted-foreground">
-                    Player Level
-                </p>
-
-                <h2 className="text-6xl font-black text-primary mt-4">
-                    {profile.skill_level?.toUpperCase()}
-                </h2>
-
-                <p className="text-muted-foreground mt-2">
-                    Elite competitor
-                </p>
-
-            </div>
-
-
-            <div className="mt-8">
-
-                <h2 className="text-xl font-bold mb-4">
-                    Favorite Sports
-                </h2>
-
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-
-                    {(profile.preferred_sports || profile.sports || []).map((sport: string) => (
-                        <div
-                            key={sport}
-                            className="bg-surface/40 rounded-3xl p-5 text-center"
-                        >
-                            <div className="text-4xl mb-3">
-                                {sport === 'badminton' && '🏸'}
-                                {sport === 'football' && '⚽'}
-                                {sport === 'basketball' && '🏀'}
-                                {sport === 'tennis' && '🎾'}
-                                {sport === 'cricket' && '🏏'}
-                                {sport === 'table_tennis' && '🏓'}
-                            </div>
-
-                            <p className="font-bold capitalize">
-                                {sport.replace('_', ' ')}
-                            </p>
-                        </div>
-                    ))}
-
-                </div>
-
-
-            </div>
-
-            </div>
-
-        </div>
-
-    );
+  const name = profile.name || 'Player';
+  const sports = profile.preferred_sports || profile.sports || [];
+  return (
+    <main className="wrap" id="app">
+      <Link className="lb" href="/">← Games</Link>
+      <section className="card id" style={{ margin: '14px 0 18px', flexWrap: 'wrap' }}>
+        <i className="av">{name[0]?.toUpperCase() || 'P'}</i>
+        <div style={{ flex: 1 }}><h2>{name}</h2><span className="mono">{profile.city || 'Nearby'}, {profile.skill_level || 'Player'}</span><br /><span className="mono">No reviews yet</span></div>
+        {sessionUser?.id !== id && <div className="acts" style={{ margin: 0 }}>{status === 'friends' ? <span className="tag">Friends</span> : <button className="btn sm gh" onClick={() => void addFriend()} disabled={status === 'pending'}>{status === 'pending' ? 'Requested' : status === 'accept' ? 'Accept request' : 'Add friend'}</button>}<button className="btn sm gh" disabled>Block</button><button className="btn sm bad" disabled>Report</button></div>}
+      </section>
+      <div className="tiles"><div><b>{profile.games_joined ?? 0}</b><span>Games joined</span></div><div><b>{profile.games_hosted ?? 0}</b><span>Games hosted</span></div><div><b>—</b><span>Rating</span></div><div><b>{sports.length}</b><span>Favourite sports</span></div></div>
+      <section className="card"><h3>Plays</h3><div className="chips">{sports.length ? sports.map((sport: string) => { const item = SPORTS.find((entry) => entry.id === sport); return <span className="chip" key={sport}>{item?.emoji || '🏅'} {item?.name || sport.replace('_', ' ')}</span>; }) : <p>No sports picked yet.</p>}</div></section>
+      <section className="card" style={{ marginTop: 18 }}><h3>Reviews</h3><p>Reviews appear after a finished match.</p></section>
+    </main>
+  );
 }

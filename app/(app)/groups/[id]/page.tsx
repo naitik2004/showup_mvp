@@ -1,15 +1,15 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 
 import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { GameGroup, GroupMember, SPORTS } from '@/types';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Calendar, MapPin, Users, ArrowLeft, Send, CheckCircle, MessageSquare } from 'lucide-react';
 import { toast } from 'sonner';
 import { useGroupChat } from '@/lib/hooks/useGroupChat';
+import { useAuth } from '@/lib/hooks/useAuth';
+import InviteFriendsDialog from '@/components/groups/InviteFriendsDialog';
 
 import { usePresence } from '@/lib/hooks/usePresence';
 
@@ -18,7 +18,8 @@ import { usePresence } from '@/lib/hooks/usePresence';
 export default function GroupDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const supabase = createClient();
+  const { sessionUser } = useAuth();
+  const supabase = useMemo(() => createClient(), []);
   const groupId = params.id as string;
 
 
@@ -54,15 +55,13 @@ export default function GroupDetailPage() {
     if (!groupId) return;
 
     const fetchGroupDetails = async () => {
-      const {data: { user },} = await supabase.auth.getUser();
+      setCurrentUserId(sessionUser?.id || '');
 
-      setCurrentUserId(user?.id || '');
-
-      const { data: profile } = await supabase
+      const { data: profile } = sessionUser ? await supabase
       .from('users')
       .select('name')
-      .eq('id', user?.id)
-      .single();
+      .eq('id', sessionUser.id)
+      .single() : { data: null };
 
       setCurrentUserName(profile?.name || 'Player');
       setLoading(true);
@@ -112,7 +111,7 @@ export default function GroupDetailPage() {
     };
 
     fetchGroupDetails();
-  }, [groupId, supabase, router]);
+  }, [groupId, supabase, router, sessionUser?.id]);
 
 
   // useEffect(() => {
@@ -183,57 +182,7 @@ export default function GroupDetailPage() {
 
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-[#0A0A0B] p-6">
-        <div className="max-w-5xl mx-auto animate-pulse space-y-6">
-
-          {/* Header */}
-          <div className="h-10 w-48 bg-muted rounded-lg" />
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-
-            {/* Left Side */}
-            <div className="space-y-6">
-
-              <div className="bg-surface/30 border border-muted rounded-3xl p-6 space-y-4">
-                <div className="h-6 w-32 bg-muted rounded" />
-                <div className="h-5 w-64 bg-muted rounded" />
-                <div className="h-5 w-52 bg-muted rounded" />
-                <div className="h-5 w-40 bg-muted rounded" />
-              </div>
-
-              <div>
-                <div className="h-5 w-40 bg-muted rounded mb-4" />
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {[1, 2, 3, 4].map((item) => (
-                    <div
-                      key={item}
-                      className="h-24 bg-surface/30 border border-muted rounded-2xl"
-                    />
-                  ))}
-                </div>
-              </div>
-
-            </div>
-
-            {/* Chat Skeleton */}
-            <div className="h-[75vh] bg-surface/30 border border-muted rounded-3xl p-4 flex flex-col">
-              <div className="h-6 w-28 bg-muted rounded mb-6" />
-
-              <div className="flex-1 space-y-3">
-                <div className="h-12 w-2/3 bg-muted rounded-xl" />
-                <div className="h-12 w-1/2 bg-muted rounded-xl ml-auto" />
-                <div className="h-12 w-3/4 bg-muted rounded-xl" />
-              </div>
-
-              <div className="h-12 bg-muted rounded-xl mt-4" />
-            </div>
-
-          </div>
-        </div>
-      </div>
-    );
+    return <main className="wrap" id="app"><section className="card emp"><p>Loading match…</p></section></main>;
   }
 
   if (!group) return null;
@@ -281,27 +230,25 @@ export default function GroupDetailPage() {
         return;
       }
 
-      const { data: { user } } = await supabase.auth.getUser();
-
-      if (!user) return;
+      if (!currentUserId) return;
 
       const { error } = await supabase
         .from('group_members')
         .delete()
         .eq('group_id', groupId)
-        .eq('user_id', user.id);
+        .eq('user_id', currentUserId);
 
       if (error) {
         toast.error('Failed to leave group');
         return;
       }
       setMembers((prev) =>
-        prev.filter((m) => m.user_id !== user.id)
+        prev.filter((m) => m.user_id !== currentUserId)
       );
 
       toast.success('Left group');
 
-      router.push('/map');
+      router.push('/');
     };
 
 
@@ -325,6 +272,18 @@ export default function GroupDetailPage() {
     };
 
     const isHost = currentUserId === group.host_id;
+    const isMember = members.some((member) => member.user_id === currentUserId);
+    const joinMatch = async () => {
+      if (!sessionUser) { router.push('/login'); return; }
+      if (group.status !== 'open' || members.length >= group.max_players) {
+        toast.error(`This match is ${group.status === 'in_progress' ? 'live' : group.status === 'expired' ? 'done' : 'full'} and cannot be joined.`);
+        return;
+      }
+      const { error } = await supabase.from('group_members').insert({ group_id: groupId, user_id: currentUserId, status: 'accepted' });
+      if (error) { toast.error(error.message); return; }
+      setMembers((previous) => [...previous, { id: `${groupId}-${currentUserId}`, group_id: groupId, user_id: currentUserId, status: 'accepted', user: { id: currentUserId, name: currentUserName } } as GroupMember]);
+      toast.success('You are in.');
+    };
     
     const updateGroupStatus = async (
       status: 'in_progress' | 'expired'
@@ -353,308 +312,39 @@ export default function GroupDetailPage() {
 
 
 
+  const displayStatus = group.status === 'in_progress' ? 'live' : group.status === 'expired' ? 'done' : group.status === 'open' && members.length >= group.max_players ? 'full' : group.status;
   return (
-    <div className="min-h-screen bg-[#0A0A0B] flex flex-col">
-      {/* Top Header */}
-      <header className="border-b border-muted bg-surface/30 backdrop-blur-md sticky top-0 z-10 px-4 h-14 flex items-center gap-3">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => router.push('/map')}
-          className="text-cream hover:bg-muted"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </Button>
-        <div className="flex items-center gap-2">
-          <span className="text-2xl">{sportInfo?.emoji}</span>
-          <h1 className="font-heading font-extrabold text-cream truncate max-w-[200px]">
-            {sportInfo?.name || 'Sports Match'}
-          </h1>
+    <main className="wrap" id="app">
+      <Link className="lb" href="/">← All games</Link>
+      <section className="mh" style={{ marginTop: 14 }}>
+        <div>
+          <span className="lb" style={{ color: '#f3efe4aa' }}>{group.is_permanent ? 'Permanent group' : 'One-off match'} <span className={`pl ${displayStatus}`}>{displayStatus}</span></span>
+          <h1>{sportInfo?.emoji} {sportInfo?.name || 'Sports Match'}</h1>
+          <p>{group.location_name}, {formattedDate} at {formattedTime}</p>
+          <p>{group.skill_level} level</p>
         </div>
-      </header>
-
-      <div className="max-w-7xl w-full mx-auto p-6 flex flex-col lg:flex-row gap-8">
-
-        {/* Left Side: Game details & Players list */}
-        <div className="flex-1 space-y-6">
-          <Card className="bg-surface/40 border-muted">
-            <CardContent className="p-6 space-y-6">
-              <div className="flex items-center justify-between flex-wrap gap-2">
-                <div className="flex items-center gap-2 flex-wrap">
-
-                  <span className="text-sm font-extrabold uppercase tracking-widest px-2.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">
-                    {group.skill_level}
-                  </span>
-
-                  <span
-                    className={`text-xs px-2 py-1 rounded-full font-bold
-                      ${
-                        group.status === "in_progress"
-                          ? "bg-blue-500/20 text-blue-400"
-                          : group.status === "expired"
-                          ? "bg-red-500/20 text-red-400"
-                          : group.status === "full"
-                          ? "bg-orange-500/20 text-orange-400"
-                          : "bg-yellow-500/20 text-yellow-400"
-                      }
-                    `}
-                  >
-                    {group.status?.toUpperCase()}
-                  </span>
-
-                  <span className="text-xs text-muted-foreground">
-                    {group.is_permanent ? 'Permanent Group' : 'Temporary Group'}
-                  </span>
-
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <div className="flex items-start gap-3">
-                  <MapPin className="w-5 h-5 text-primary shrink-0 mt-0.5" />
-                  <div>
-                    <h4 className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Location</h4>
-                    <p className="text-base font-bold text-cream mt-0.5">{group.location_name}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <Calendar className="w-5 h-5 text-primary shrink-0 mt-0.5" />
-                  <div>
-                    <h4 className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Date & Time</h4>
-                    <p className="text-base font-bold text-cream mt-0.5">
-                      {formattedDate} at {formattedTime}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <Users className="w-5 h-5 text-primary shrink-0 mt-0.5" />
-
-                  <div>
-                    <h4 className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Players count</h4>
-                    <p className="text-base font-bold text-cream mt-0.5">
-                      {members.length} / {group.max_players} joined
-                    </p>
-                  </div>
-
-                </div>
-                {!isHost && (
-                  <Button
-                    variant="destructive"
-                    className="w-full"
-                    onClick={handleLeaveGroup}
-                  >
-                    Leave Group
-                  </Button>
-                )}
-
-                {isHost && group.status === "open" && (
-                  <div className="flex gap-2">
-                    <Button
-                      className="flex-1"
-                      onClick={() => updateGroupStatus("in_progress")}
-                    >
-                      Start Match
-                    </Button>
-
-                    <Button
-                      variant="destructive"
-                      className="flex-1"
-                      onClick={() => updateGroupStatus("expired")}
-                    >
-                      Cancel Match
-                    </Button>
-                  </div>
-                )}
-
-                {isHost && group.status === "live" && (
-                  <Button
-                    className="w-full"
-                    onClick={() => updateGroupStatus("expired")}
-                  >
-                    End Match
-                  </Button>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Members List */}
-          <div className="space-y-3">
-            <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground px-1">
-              Joined Players ({members.length})
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {members.map((member) => (
-                <Card key={member.id} className="bg-surface/30 border-muted hover:border-muted-foreground transition-all">
-                  <CardContent className="p-3.5 flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-lg border border-primary/20 shrink-0">
-                      {(member.user?.name || 'P').charAt(0).toUpperCase()}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-bold text-cream truncate">{member.user?.name || 'Player'}</p>
-                      <p className="text-[10px] text-muted-foreground truncate">{member.user?.city || 'India'}</p>
-                    </div>
-                    {member.user_id === group.host_id && (
-                      <span className="text-[9px] font-extrabold text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded uppercase tracking-wider">
-                        Host
-                      </span>
-                    )}
-                    {isHost && member.user_id !== group.host_id && (
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => kickPlayer(member.user_id)}
-                      >
-                        Kick
-                      </Button>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Right Side: Group Chat */}
-        <div className="w-full lg:w-[420px] shrink-0">
-          <div className="flex flex-col h-[78vh] border border-muted bg-surface/20 rounded-3xl overflow-hidden shadow-2xl">
-
-            {/* Header */}
-            <div className="px-5 py-4 bg-surface border-b border-muted flex items-center gap-3">
-              <MessageSquare className="w-5 h-5 text-primary" />
-              <div>
-                <h3 className="font-heading font-extrabold text-cream">
-                  Group Chat
-                </h3>
-                <p className="text-xs text-muted-foreground">
-                  🟢 {onlineCount} online
-                </p>
-              </div>
-            </div>
-
-            {/* Messages */}
-            <div className="flex-1 min-h-0 p-4 overflow-y-auto space-y-3">
-
-              {messages.length === 0 ? (
-                <div className="h-full flex flex-col items-center justify-center text-center">
-                  <div className="p-3 bg-muted rounded-full text-muted-foreground mb-2">
-                    <MessageSquare className="w-6 h-6" />
-                  </div>
-
-                  <p className="text-sm font-bold text-cream">
-                    Match Chat Group
-                  </p>
-
-                  <p className="text-xs text-muted-foreground max-w-[200px]">
-                    No messages yet. Start the conversation.
-                  </p>
-                </div>
-              ) : (
-                messages.map((message) => {
-                  const isMine = message.sender_id === currentUserId;
-                  
-
-                  return (
-                    <div
-                      key={message.id}
-                      className={`flex ${
-                        isMine ? 'justify-end' : 'justify-start'
-                      }`}
-                    >
-                      <div
-                        className={`max-w-[70%] rounded-xl p-3 ${
-                          isMine
-                            ? 'bg-primary text-black'
-                            : 'bg-black/40 border border-muted'
-                        }`}
-                      >
-                        {!isMine && (
-                          <p className="text-xs font-bold text-primary mb-1">
-                            {message.sender?.name || 'Player'}
-                          </p>
-                        )}
-
-                        <p className="text-sm break-words">
-                          {message.content}
-                        </p>
-                        <p className="text-[10px] opacity-60 mt-1">
-                          {new Date(message.created_at).toLocaleTimeString([], {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })
-                
-              )}
-              <div ref={messagesEndRef} />
-
-            </div>
-
-            {/* Typing */}
-            {typingUsers.length > 0 && (
-              <div className="px-4 py-2 flex items-center gap-2">
-                {/* Sender name */}
-                <span className="text-xs text-muted-foreground font-semibold">
-                  {typingUsers[0]}
-                </span>
-
-                {/* Animated typing bubble */}
-                <div className="flex items-center gap-1 bg-black/40 border border-muted px-3 py-2 rounded-xl">
-                  <span
-                    className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce"
-                    style={{ animationDelay: '0ms', animationDuration: '900ms' }}
-                  />
-                  <span
-                    className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce"
-                    style={{ animationDelay: '150ms', animationDuration: '900ms' }}
-                  />
-                  <span
-                    className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce"
-                    style={{ animationDelay: '300ms', animationDuration: '900ms' }}
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* Input */}
-            <form
-              onSubmit={handleSendMessage}
-              className="p-3 bg-surface border-t border-muted flex gap-2"
-            >
-              <input
-                type="text"
-                placeholder="Send message..."
-                value={chatMessage}
-
-                onChange={(e) => {
-                  console.log("INPUT CHANGED");
-
-                  setChatMessage(e.target.value);
-
-                  setTyping();
-                }}
-                
-                className="flex-1 bg-black/40 border border-muted text-cream px-3 py-2 rounded-xl text-sm focus:outline-none focus:border-primary"
-              />
-
-              <Button
-                type="submit"
-                size="icon"
-                className="bg-primary text-primary-foreground rounded-xl shrink-0"
-              >
-                <Send className="w-4 h-4" />
-              </Button>
-            </form>
-
-          </div>
-        </div>
-
+        <div><p className="mono" style={{ color: '#f3efe4aa', marginBottom: 8 }}>{members.length} of {group.max_players} in, {Math.max(0, group.max_players - members.length)} left</p><div className="sd">{Array.from({ length: Math.min(group.max_players, 12) }, (_, index) => <i key={index} className={index < members.length ? 'on' : ''} />)}</div></div>
+      </section>
+      <div className="acts">
+        {!isMember && <button className="btn hot" onClick={() => void joinMatch()} disabled={displayStatus !== 'open'}>{displayStatus === 'open' ? 'Join this match' : displayStatus === 'full' ? 'Match is full' : 'Not joinable'}</button>}
+        {isMember && !isHost && ['open', 'full'].includes(displayStatus) && <button className="btn bad" onClick={handleLeaveGroup}>Leave match</button>}
+        {isMember && ['open', 'full', 'live'].includes(displayStatus) && <InviteFriendsDialog gameId={groupId} />}
+        {isHost && group.status === 'open' && <><button className="btn hot" onClick={() => updateGroupStatus('in_progress')}>Start match</button><button className="btn bad" onClick={() => updateGroupStatus('expired')}>Cancel match</button></>}
+        {isHost && group.status === 'in_progress' && <button className="btn gh" onClick={() => updateGroupStatus('expired')}>End match</button>}
       </div>
-    </div>
+      <div className="mg2">
+        <section className="card"><h3>Players</h3>
+          {members.map((member) => <div className="mem" key={member.id}><i className="av">{(member.user?.name || 'P').charAt(0).toUpperCase()}</i><div><b>{member.user?.name || 'Player'}</b><br /><small>{member.user?.city || 'India'}</small></div>{member.user_id === group.host_id && <span className="tag h">Host</span>}{isHost && member.user_id !== group.host_id && <button className="btn sm bad" onClick={() => void kickPlayer(member.user_id)}>Remove</button>}</div>)}
+          {!members.length && <p className="sy">No players have joined yet.</p>}
+        </section>
+        <section className="card cht"><div className="chh"><h3 style={{ margin: 0 }}>Group chat</h3>{isMember && <span className="mono">● {onlineCount} online</span>}</div>
+          {isMember ? <>
+            <div className="msgs">{messages.length ? messages.map((message) => <div className={`mg ${message.sender_id === currentUserId ? 'me' : ''}`} key={message.id}><small>{message.sender_id === currentUserId ? 'You' : message.sender?.name || 'Player'}, {new Date(message.created_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</small><p>{message.content}</p></div>) : <p className="sy">No messages yet. Ask who is bringing the gear.</p>}<div ref={messagesEndRef} /></div>
+            {typingUsers.length > 0 && <div className="ty on">{typingUsers[0]} is typing</div>}
+            <form id="cf" onSubmit={handleSendMessage}><input value={chatMessage} onChange={(event) => { setChatMessage(event.target.value); setTyping(); }} placeholder="Message the group" aria-label="Message the group" /><button className="btn" type="submit">Send</button></form>
+          </> : <p className="sy lock">Only players in this match can read and send messages.<br />{sessionUser ? 'Join to unlock the chat.' : <><Link href="/login"><u>Sign in</u></Link> to join.</>}</p>}
+        </section>
+      </div>
+    </main>
   );
 }
