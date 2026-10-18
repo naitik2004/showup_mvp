@@ -1,14 +1,16 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { MapPin } from 'lucide-react';
 
-interface SearchResult {
-  display_name: string;
-  lat: string;
-  lon: string;
-}
+const VENUES = [
+  { display_name: 'Old Fort Maidan, Delhi NCR', lat: '28.613', lon: '77.229' },
+  { display_name: 'Lakeview Turf, Delhi NCR', lat: '28.621', lon: '77.198' },
+  { display_name: 'City Sports Hub, Delhi NCR', lat: '28.604', lon: '77.214' },
+  { display_name: 'North Gymkhana, Delhi NCR', lat: '28.629', lon: '77.218' },
+  { display_name: 'Sector 9 Arena, Delhi NCR', lat: '28.620', lon: '77.232' },
+];
 
 interface Props {
   onSelect: (location: {
@@ -20,37 +22,7 @@ interface Props {
 
 export default function LocationSearch({ onSelect }: Props) {
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState<SearchResult[]>([]);
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    if (query.length < 3) {
-      setResults([]);
-      return;
-    }
-
-    const timer = setTimeout(async () => {
-      try {
-        setLoading(true);
-
-        const response = await fetch(
-          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
-            query
-          )}&countrycodes=in&format=json&limit=5`
-        );
-
-        const data = await response.json();
-
-        setResults(data || []);
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setLoading(false);
-      }
-    }, 500);
-
-    return () => clearTimeout(timer);
-  }, [query]);
+  const results = useMemo(() => query.trim().length < 2 ? [] : VENUES.filter((venue) => venue.display_name.toLowerCase().includes(query.toLowerCase())), [query]);
 
   return (
     <div className="relative">
@@ -75,7 +47,7 @@ export default function LocationSearch({ onSelect }: Props) {
                 });
 
                 setQuery(result.display_name);
-                setResults([]);
+                setQuery(result.display_name);
               }}
               className="w-full px-3 py-3 text-left hover:bg-muted flex gap-2 items-start"
             >
@@ -89,11 +61,6 @@ export default function LocationSearch({ onSelect }: Props) {
         </div>
       )}
 
-      {loading && (
-        <div className="absolute top-3 right-3 text-xs text-muted-foreground">
-          Searching...
-        </div>
-      )}
     </div>
   );
 }

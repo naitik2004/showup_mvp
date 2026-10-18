@@ -10,7 +10,7 @@ function readableAuthError(message: string) {
   if (value.includes('invalid login credentials') || value.includes('invalid email or password')) return 'Email or password is incorrect. Check both and try again.';
   if (value.includes('already registered') || value.includes('user already registered')) return 'That email is already registered. Sign in instead.';
   if (value.includes('password') && (value.includes('weak') || value.includes('least'))) return 'Password must be at least 8 characters.';
-  if (value.includes('fetch') || value.includes('network') || value.includes('failed to fetch')) return 'Network error. Check your connection and try again.';
+  if (value.includes('fetch') || value.includes('network') || value.includes('failed to fetch')) return 'Could not reach the sign-in service. Check the Supabase project URL and your connection, then try again.';
   return message || 'Authentication failed. Please try again.';
 }
 
@@ -48,7 +48,7 @@ export default function LoginPage() {
       router.replace(destination);
       router.refresh();
     } catch (cause: any) {
-      setError(readableAuthError(cause?.message || 'Network error. Check your connection and try again.'));
+      setError(readableAuthError(cause?.message || 'Could not reach the sign-in service. Check the Supabase project URL and your connection, then try again.'));
     } finally {
       setSubmitting(false);
     }

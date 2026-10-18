@@ -3,10 +3,12 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Bell, Calendar, UserPlus, Zap, Check, Compass } from 'lucide-react';
+import { ArrowLeft, Bell, Compass, UserPlus, Calendar } from 'lucide-react';
+import { MOCK_NOTIFICATIONS } from '@/data/mock';
 
 export default function NotificationsPage() {
   const [filter, setFilter] = useState<'all' | 'matches' | 'requests'>('all');
+  // TODO: connect backend — this activity feed is reference-inspired static data.
 
   return (
     <div className="min-h-screen bg-[#0A0A0B] text-cream flex flex-col">
@@ -65,30 +67,15 @@ export default function NotificationsPage() {
           </button>
         </div>
 
-        {/* Empty State / Feed */}
-        <div className="bg-[#141418] border border-[#2A2A2E] rounded-3xl p-8 text-center space-y-4 shadow-xl">
-          <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary mx-auto shadow-inner">
-            <Bell className="w-7 h-7" />
-          </div>
-
-          <div className="space-y-1">
-            <h3 className="font-heading font-black text-xl text-cream">
-              You're All Caught Up
-            </h3>
-            <p className="text-sm text-muted-foreground max-w-sm mx-auto leading-relaxed">
-              Match updates, join notifications, and player friend requests will notify you right here.
-            </p>
-          </div>
-
-          <div className="pt-2">
-            <Link href="/map">
-              <Button className="bg-primary text-black hover:bg-primary/90 font-bold rounded-xl px-5 h-11 shadow-[0_0_20px_rgba(232,255,71,0.25)] gap-2">
-                <Compass className="w-4 h-4 stroke-[2.5]" />
-                <span>Find Matches Nearby</span>
-              </Button>
-            </Link>
-          </div>
-        </div>
+        {/* Static sample activity feed */}
+        {MOCK_NOTIFICATIONS.filter((item) => filter === 'all' || (filter === 'matches' ? item.kind === 'match' : item.kind === 'friend')).map((item) => (
+          <article key={item.id} className="bg-[#141418] border border-[#2A2A2E] rounded-3xl p-5 flex items-start gap-4 shadow-xl">
+            <div className="w-12 h-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
+              {item.kind === 'match' ? <Calendar className="w-5 h-5" /> : <UserPlus className="w-5 h-5" />}
+            </div>
+            <div><h3 className="font-heading font-black text-lg text-cream">{item.title}</h3><p className="text-sm text-muted-foreground">{item.detail}</p><span className="text-[10px] uppercase tracking-widest text-primary">Sample notification</span></div>
+          </article>
+        ))}
       </main>
     </div>
   );

@@ -2,19 +2,12 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { SPORTS } from '@/types';
-
-type Invite = {
-  id: string;
-  game_id: string;
-  created_at: string;
-  member_count: number;
-  game: { sport: string; location_name: string; scheduled_at: string; max_players: number; status: string } | null;
-  sender: { name?: string } | null;
-};
+import { useMockData } from '@/lib/mock-data';
+import type { MockInvite } from '@/data/mock';
 
 const when = (value: string) => {
   const date = new Date(value);
@@ -27,57 +20,23 @@ const when = (value: string) => {
 
 export default function InvitesPage() {
   const router = useRouter();
-  const { sessionUser, loading: authLoading } = useAuth();
-  const [invites, setInvites] = useState<Invite[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const { sessionUser, user, loading: authLoading } = useAuth();
+  const { invites, answerInvite } = useMockData();
+  const [loading] = useState(false);
   const [busyId, setBusyId] = useState('');
-
-  const loadInvites = useCallback(async () => {
-    if (!sessionUser) return;
-    setLoading(true);
-    setError('');
-    try {
-      const response = await fetch('/api/invites');
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error || 'Invites could not be loaded.');
-      setInvites(result.invites || []);
-    } catch (loadError: any) {
-      setError(loadError?.message || 'Invites could not be loaded.');
-    } finally {
-      setLoading(false);
-    }
-  }, [sessionUser?.id]);
 
   useEffect(() => {
     if (!authLoading && !sessionUser) router.replace('/login');
   }, [authLoading, router, sessionUser]);
-  useEffect(() => { if (sessionUser) void loadInvites(); }, [sessionUser, loadInvites]);
-
-  const respond = async (invite: Invite, action: 'accept' | 'decline') => {
-    if (!sessionUser) { router.push('/login'); return; }
+  const respond = (invite: MockInvite, action: 'accept' | 'decline') => {
+    if (!sessionUser || !user) { router.push('/login'); return; }
     setBusyId(invite.id);
-    try {
-      const response = await fetch('/api/invites', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, inviteId: invite.id }),
-      });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error || 'The invite response failed.');
-      if (action === 'decline') {
-        setInvites((previous) => previous.filter((item) => item.id !== invite.id));
-        toast.success('Invite declined.');
-      } else {
-        toast.success('You are in.');
-        router.push(`/groups/${result.game_id || invite.game_id}`);
-      }
-    } catch (responseError: any) {
-      toast.error(responseError?.message || 'The invite response failed.');
-      if (responseError?.message?.startsWith('Too late.')) void loadInvites();
-    } finally {
-      setBusyId('');
-    }
+    // TODO: connect backend — invite responses are temporary local state.
+    const result = answerInvite(invite.id, action, user);
+    setBusyId('');
+    if (result === null) { toast.error('This sample invite is unavailable.'); return; }
+    if (action === 'decline') toast.success('Invite declined.');
+    else if (result) { toast.success('You are in.'); router.push(`/groups/${result}`); }
   };
 
   if (authLoading || !sessionUser) return <main className="wrap" id="app"><section className="card emp">Loading invites…</section></main>;
@@ -85,7 +44,7 @@ export default function InvitesPage() {
     <main className="wrap" id="app">
       <h1 className="ph">Invites</h1>
       <div className="stack">
-        {loading ? <section className="card emp">Loading invites…</section> : error ? <section className="card emp" role="alert"><h3>Invites couldn&apos;t load</h3><p>{error}</p><button className="btn hot" style={{ marginTop: 14 }} onClick={() => void loadInvites()}>Retry</button></section> : invites.length ? invites.map((invite) => {
+        {loading ? <section className="card emp">Loading invites…</section> : invites.length ? invites.map((invite) => {
           const game = invite.game;
           const sport = SPORTS.find((item) => item.id === game?.sport);
           const state = game?.status === 'in_progress' ? 'live' : game?.status === 'full' ? 'full' : game?.status === 'open' ? 'open' : game?.status || 'expired';
@@ -95,8 +54,8 @@ export default function InvitesPage() {
             <h3 style={{ margin: '8px 0' }}>{sport?.emoji || '🏅'} {sport?.name || game?.sport || 'Match'} at {game?.location_name || 'Venue'}</h3>
             <p>{game ? `${when(game.scheduled_at)}, ${invite.member_count} of ${game.max_players} in` : 'Match details unavailable'} <span className={`pl ${state}`}>{state === 'live' ? 'Live now' : state === 'open' ? 'Open' : state === 'full' ? 'Full' : state}</span></p>
             <div className="acts" style={{ margin: '14px 0 0' }}>
-              <button className="btn hot" disabled={!game || busyId === invite.id} onClick={() => void respond(invite, 'accept')}>{busyId === invite.id ? 'Working…' : 'Accept and join'}</button>
-              <button className="btn gh" disabled={busyId === invite.id} onClick={() => void respond(invite, 'decline')}>Decline</button>
+              <button className="btn hot" disabled={!game || busyId === invite.id} onClick={() => respond(invite, 'accept')}>{busyId === invite.id ? 'Working…' : 'Accept and join'}</button>
+              <button className="btn gh" disabled={busyId === invite.id} onClick={() => respond(invite, 'decline')}>Decline</button>
             </div>
           </section>;
         }) : <section className="card emp"><h3>All caught up</h3><p>When a friend invites you to a match it lands here.</p></section>}

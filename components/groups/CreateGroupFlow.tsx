@@ -2,18 +2,16 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useAuth } from '@/lib/hooks/useAuth';
-import { useMap } from '@/lib/hooks/useMap';
-import { createClient } from '@/lib/supabase/client';
-import { SkillLevel, Sport, SPORTS } from '@/types';
+import { useMockData } from '@/lib/mock-data';
+import { GameGroup, SkillLevel, Sport, SPORTS } from '@/types';
 import { toast } from 'sonner';
 
 export default function CreateGroupFlow() {
   const router = useRouter();
-  const { sessionUser } = useAuth();
-  const { coords } = useMap();
-  const supabase = useMemo(() => createClient(), []);
+  const { sessionUser, user } = useAuth();
+  const { addGame } = useMockData();
   const [sport, setSport] = useState<Sport>('football');
   const [venue, setVenue] = useState('');
   const [day, setDay] = useState('0');
@@ -25,7 +23,7 @@ export default function CreateGroupFlow() {
 
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!sessionUser?.id) { router.push('/login'); return; }
+    if (!sessionUser?.id || !user) { router.push('/login'); return; }
     if (!venue.trim()) { toast.error('Please provide a venue name'); return; }
     if (maxPlayers < 2 || maxPlayers > 22) { toast.error('Capacity must be between 2 and 22 players'); return; }
 
@@ -36,23 +34,25 @@ export default function CreateGroupFlow() {
     if (scheduledAt.getTime() <= Date.now()) { toast.error('Scheduled time must be in the future'); return; }
     setSubmitting(true);
     try {
-      const expiresAt = isPermanent ? null : new Date(scheduledAt.getTime() + 2 * 60 * 60 * 1000).toISOString();
-      const { data: group, error } = await supabase.from('game_groups').insert({
+      // TODO: connect backend — hosted games reset when this tab is refreshed.
+      const group: GameGroup = {
+        id: `local-game-${Date.now()}`,
         host_id: sessionUser.id,
         sport,
-        location: `POINT(${coords.lng} ${coords.lat})`,
+        location: { lat: 28.6139, lng: 77.209 },
         location_name: venue.trim(),
         max_players: maxPlayers,
         skill_level: skill,
         scheduled_at: scheduledAt.toISOString(),
-        expires_at: expiresAt,
+        expires_at: isPermanent ? null : new Date(scheduledAt.getTime() + 2 * 60 * 60 * 1000).toISOString(),
         is_permanent: isPermanent,
         status: 'open',
-      }).select().single();
-      if (error) throw error;
-
-      const { error: memberError } = await supabase.from('group_members').insert({ group_id: group.id, user_id: sessionUser.id, status: 'accepted' });
-      if (memberError) console.error('Could not add host as a member:', memberError);
+        created_at: new Date().toISOString(),
+        host: user,
+        host_name: user.name,
+        member_count: 1,
+      };
+      addGame(group, user);
       toast.success('Game group created successfully!');
       router.push(`/groups/${group.id}`);
     } catch (error: any) {

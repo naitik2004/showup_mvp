@@ -1,41 +1,20 @@
 'use client';
 
 import Link from 'next/link';
-import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/lib/hooks/useAuth';
-import { createClient } from '@/lib/supabase/client';
-
-type Friend = { id: string; name: string; city?: string | null; preferred_sports?: string[] | null; };
+import { useMockData } from '@/lib/mock-data';
 
 export default function FriendsPage() {
   const { sessionUser, loading: authLoading } = useAuth();
-  const supabase = useMemo(() => createClient(), []);
-  const [friends, setFriends] = useState<Friend[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-
-  const loadFriends = useCallback(async () => {
-    if (!sessionUser?.id) { setFriends([]); setLoading(false); return; }
-    setLoading(true);
-    setError('');
-    const { data: relationships, error: relationshipError } = await supabase
-      .from('friendships').select('user_a,user_b').or(`user_a.eq.${sessionUser.id},user_b.eq.${sessionUser.id}`).eq('status', 'accepted');
-    if (relationshipError) { setError(relationshipError.message); setLoading(false); return; }
-    const ids = (relationships || []).map((item) => item.user_a === sessionUser.id ? item.user_b : item.user_a);
-    if (!ids.length) { setFriends([]); setLoading(false); return; }
-    const { data, error: profileError } = await supabase.from('profiles').select('id,name,city,preferred_sports').in('id', ids);
-    if (profileError) setError(profileError.message);
-    else setFriends((data || []) as Friend[]);
-    setLoading(false);
-  }, [sessionUser?.id, supabase]);
-
-  useEffect(() => { void loadFriends(); }, [loadFriends]);
+  // TODO: connect backend — the friends list is local placeholder state.
+  const { friends } = useMockData();
+  const loading = authLoading;
 
   return (
     <main className="wrap" id="app">
       <h1 className="ph">Friends</h1>
       <div className="stack">
-        {!sessionUser && !authLoading ? <section className="card emp"><h3>Sign in to connect</h3><p>Add players you meet in a match to your friends list.</p><Link className="btn hot" style={{ marginTop: 14 }} href="/login">Sign in</Link></section> : loading || authLoading ? <section className="card emp"><p>Loading friends…</p></section> : error ? <section className="card emp" role="alert"><h3>Friends couldn&apos;t load</h3><p>{error}</p><button className="btn hot" style={{ marginTop: 14 }} onClick={() => void loadFriends()}>Retry</button></section> : <>
+        {!sessionUser && !authLoading ? <section className="card emp"><h3>Sign in to connect</h3><p>Add players you meet in a match to your friends list.</p><Link className="btn hot" style={{ marginTop: 14 }} href="/login">Sign in</Link></section> : loading ? <section className="card emp"><p>Loading friends…</p></section> : <>
           <section className="card">
             <h3>Your network ({friends.length})</h3>
             {friends.length ? friends.map((friend) => <div className="mem" key={friend.id}>
