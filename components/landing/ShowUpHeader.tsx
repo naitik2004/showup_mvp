@@ -38,7 +38,7 @@ export default function ShowUpHeader() {
   }, [sessionUser?.id, firebaseUser, supabase]);
 
   const active = (href: string) => href === '/' ? pathname === '/' : pathname.startsWith(href);
-  const hostHref = sessionUser ? '/groups/create' : '/login';
+  const hostHref = '/groups/create';
 
   return (
     <>
@@ -58,10 +58,10 @@ export default function ShowUpHeader() {
             <Link className={active('/profile/friends') ? 'on' : ''} href="/profile/friends">
               Friends{sessionUser && requestCount > 0 && <b>{requestCount}</b>}
             </Link>
-            {sessionUser && <Link className={active('/invites') ? 'on' : ''} href="/invites">Invites{inviteCount > 0 && <b>{inviteCount}</b>}</Link>}
-            {sessionUser && <Link className={active('/profile') && !active('/profile/friends') ? 'on' : ''} href="/profile">Profile</Link>}
+            <Link className={active('/invites') ? 'on' : ''} href="/invites">Invites{sessionUser && inviteCount > 0 && <b>{inviteCount}</b>}</Link>
+            <Link className={active('/profile') && !active('/profile/friends') ? 'on' : ''} href="/profile">Profile</Link>
           </nav>
-          <Link className="btn" href={hostHref}>{sessionUser ? '+ Host a game' : 'Sign in'}</Link>
+          <Link className="btn" href={hostHref}>+ Host a game</Link>
         </div>
       </header>
     </>
