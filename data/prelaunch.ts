@@ -25,6 +25,8 @@ export const SAMPLE_PASSES = [
   { sport: 'Football', color: '#12392b', venue: 'Metro Park Turf', time: '20:00', skill: 'All levels', host: 'Aman', seat: '7/10' },
   { sport: 'Basketball', color: '#d8f03c', venue: 'Sector 9 Arena', time: '18:45', skill: 'Advanced', host: 'Kabir', seat: '5/6' },
   { sport: 'Tennis', color: '#15130f', venue: 'Garden Club', time: '06:30', skill: 'Beginner', host: 'Meera', seat: '1/4' },
+  { sport: 'Cricket', color: '#d9532b', venue: 'Old Fort Ground', time: '17:30', skill: 'All levels', host: 'Kabir', seat: '8/12' },
+  { sport: 'Volleyball', color: '#12392b', venue: 'Lakeside Pitch', time: '16:30', skill: 'Beginner', host: 'Riya', seat: '8/12' },
 ] as const;
 
 export interface SampleGame {

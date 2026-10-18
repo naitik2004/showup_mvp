@@ -6,6 +6,8 @@ import SectionLabel from './SectionLabel';
 
 export default function MatchPassPreview() {
   const [selected, setSelected] = useState(0);
+  const [moreSports, setMoreSports] = useState(false);
+  const visiblePasses = moreSports ? SAMPLE_PASSES : SAMPLE_PASSES.slice(0, 4);
   const pass = SAMPLE_PASSES[selected];
   const details = [['Gate', pass.venue], ['Time', pass.time], ['Skill', pass.skill], ['Host', pass.host]];
 
@@ -16,10 +18,14 @@ export default function MatchPassPreview() {
           <SectionLabel gate="01" title="The pass" />
           <h2 className="passHeading">Your seat,<br />in your <span className="serif">pocket</span></h2>
           <p className="passDescription">Every game you join becomes a match pass with the place, time, seat and host. Pick a sport to print one.</p>
-          <div className="sportTabs" aria-label="Preview a sport">
-            {SAMPLE_PASSES.map((item, index) => (
+          <div className="sportTabs" role="group" aria-label="Preview a sport">
+            {visiblePasses.map((item, index) => (
               <button key={item.sport} type="button" aria-pressed={index === selected} onClick={() => setSelected(index)}>{item.sport}</button>
             ))}
+            <button type="button" aria-expanded={moreSports} onClick={() => {
+              if (moreSports && selected >= 4) setSelected(0);
+              setMoreSports((expanded) => !expanded);
+            }}>{moreSports ? '− Fewer sports' : '+ More sports'}</button>
           </div>
         </div>
         <div className="reveal">
