@@ -2,8 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import './showup-reference.css';
 import { Toaster } from '@/components/ui/sonner';
-import ShowUpHeader from '@/components/landing/ShowUpHeader';
-import { MockDataProvider } from '@/lib/mock-data';
+import AppShell from '@/components/AppShell';
 
 export const metadata: Metadata = {
   title: 'ShowUp — Sports Social Platform',
@@ -24,11 +23,10 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=DM+Mono:wght@400;500&family=Instrument+Serif:ital@1&display=swap" rel="stylesheet" />
       </head>
       <body className="antialiased min-h-screen">
-        <MockDataProvider>
-          <ShowUpHeader />
+        <AppShell>
           {children}
           <Toaster theme="dark" position="top-center" closeButton richColors />
-        </MockDataProvider>
+        </AppShell>
       </body>
     </html>
   );

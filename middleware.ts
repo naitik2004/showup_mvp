@@ -3,7 +3,7 @@ import { updateSession } from '@/lib/supabase/middleware';
 
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
-  // The reference app uses its own browser-local demo session.
+  // Public marketing and the standalone preview do not require an auth session.
   if (path === '/' || path === '/app.html' || path.startsWith('/showup/')) {
     return NextResponse.next();
   }
