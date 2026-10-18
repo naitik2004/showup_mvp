@@ -2,46 +2,18 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { GameGroup, SPORTS, Sport } from '@/types';
 import { useAuth } from '@/lib/hooks/useAuth';
-import { useMap } from '@/lib/hooks/useMap';
 import { useGroups } from '@/lib/hooks/useGroups';
-import { useRealtime } from '@/lib/hooks/useRealtime';
-import { createClient } from '@/lib/supabase/client';
+import { useMockData } from '@/lib/mock-data';
 import { toast } from 'sonner';
 
 const sportEmoji = (sport: Sport) => SPORTS.find((item) => item.id === sport)?.emoji || '🏃';
 const sportName = (sport: Sport) => SPORTS.find((item) => item.id === sport)?.name || sport.replace('_', ' ');
 const countIn = (group: GameGroup) => group.member_count || 0;
 const statusFor = (group: GameGroup) => group.status === 'in_progress' ? 'live' : countIn(group) >= group.max_players ? 'full' : 'open';
-const guestPreviewGames = (center: { lat: number; lng: number }): GameGroup[] => {
-  const created = '2026-10-18T09:00:00.000Z';
-  const samples: Array<[Sport, string, string, number, number, number, number]> = [
-    ['cricket', 'Old Fort Maidan', '2026-10-18T11:58:00+05:30', 14, 4, 28.613, 77.229],
-    ['football', 'Lakeview Turf', '2026-10-18T18:58:00+05:30', 10, 5, 28.621, 77.198],
-    ['tennis', 'City Sports Hub', '2026-10-18T16:58:00+05:30', 4, 1, 28.604, 77.214],
-    ['tennis', 'North Gymkhana', '2026-10-18T07:15:00+05:30', 4, 4, 28.629, 77.218],
-    ['table_tennis', 'Lakeside Pitch', '2026-10-18T16:30:00+05:30', 8, 8, 28.611, 77.202],
-    ['basketball', 'Sector 9 Arena', '2026-10-18T18:45:00+05:30', 6, 6, 28.62, 77.232],
-  ];
-  return samples.map(([sport, location_name, scheduled_at, max_players, member_count, lat, lng], index) => ({
-    id: `preview-game-${index + 1}`,
-    host_id: `preview-host-${index + 1}`,
-    sport,
-    location: { lat: center.lat + lat - 28.6139, lng: center.lng + lng - 77.209 },
-    location_name,
-    max_players,
-    skill_level: 'intermediate',
-    scheduled_at,
-    expires_at: null,
-    is_permanent: false,
-    status: 'open',
-    created_at: created,
-    host_name: ['Aarav', 'Maya', 'Dev', 'Rohan', 'Isha', 'Kabir'][index],
-    member_count,
-  }));
-};
+const center = { lat: 28.6139, lng: 77.209 };
 const formatTime = (value: string) => new Date(value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 const countdown = (value: string, now: number) => {
   const minutes = Math.round((new Date(value).getTime() - now) / 60000);
@@ -61,7 +33,7 @@ const greeting = () => {
   return hour >= 5 && hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : hour < 21 ? 'Good evening' : 'Good night';
 };
 
-function GameMap({ groups, center, guestPreview = false }: { groups: GameGroup[]; center: { lat: number; lng: number }; guestPreview?: boolean }) {
+function GameMap({ groups, center }: { groups: GameGroup[]; center: { lat: number; lng: number } }) {
   const positions = groups.map((group, index) => {
     const dx = (group.location.lng - center.lng) * Math.cos((center.lat * Math.PI) / 180);
     const dy = group.location.lat - center.lat;
@@ -84,7 +56,7 @@ function GameMap({ groups, center, guestPreview = false }: { groups: GameGroup[]
         const status = statusFor(group);
         const pinColor = status === 'full' ? '#d9532b' : status === 'live' ? '#fff' : '#d8f03c';
         return (
-          <Link key={group.id} className="pin" href={guestPreview ? '/login' : `/groups/${group.id}`} aria-label={`${sportName(group.sport)} at ${group.location_name}`}>
+          <Link key={group.id} className="pin" href={`/groups/${group.id}`} aria-label={`${sportName(group.sport)} at ${group.location_name}`}>
             <title>{`${sportName(group.sport)} at ${group.location_name}, ${Math.max(0, group.max_players - countIn(group))} spots left`}</title>
             <circle cx={x} cy={y} r="3.6" fill={pinColor} stroke="#15130f" strokeWidth=".5" />
             <text x={x} y={y + 1.3} fontSize="3.6" textAnchor="middle">{sportEmoji(group.sport)}</text>
@@ -96,10 +68,10 @@ function GameMap({ groups, center, guestPreview = false }: { groups: GameGroup[]
   );
 }
 
-function GameCard({ group, guestPreview = false }: { group: GameGroup; guestPreview?: boolean }) {
+function GameCard({ group }: { group: GameGroup }) {
   const status = statusFor(group);
   return (
-    <Link className="gc" href={guestPreview ? '/login' : `/groups/${group.id}`}>
+    <Link className="gc" href={`/groups/${group.id}`}>
       <span className="em">{sportEmoji(group.sport)}</span>
       <div>
         <b>{sportName(group.sport)} at {group.location_name || 'Selected Map Point'}</b>
@@ -128,34 +100,20 @@ function BentoCard({ color, label, value, title, detail, foot, icon, href }: { c
 export default function ShowUpHome() {
   const router = useRouter();
   const { sessionUser, user, loading: authLoading } = useAuth();
-  const { coords } = useMap();
-  const { groups, setGroups, loading, error, refetch } = useGroups(coords.lat, coords.lng);
-  const supabase = useMemo(() => createClient(), []);
+  const { groups } = useGroups();
+  const { invites, joinGame } = useMockData();
   const [selectedSport, setSelectedSport] = useState<Sport | 'all'>('all');
   const [search, setSearch] = useState('');
   const [clock, setClock] = useState('--:--');
-  const [inviteCount, setInviteCount] = useState(0);
-  const [myNextMatch, setMyNextMatch] = useState<GameGroup | null>(null);
+  const inviteCount = sessionUser ? invites.length : 0;
+  const myNextMatch = sessionUser ? groups.find((group) => group.status === 'open') || null : null;
   const [now, setNow] = useState(() => Date.now());
-  const [stats, setStats] = useState({ joined: 0, hosted: 0, friends: 0 });
+  const [stats] = useState({ joined: 5, hosted: 2, friends: 8 });
   const displayStats = sessionUser ? stats : { joined: 24, hosted: 6, friends: 38 };
   const isGuestPreview = !authLoading && !sessionUser;
-  const sampleGroups = useMemo(() => guestPreviewGames(coords), [coords.lat, coords.lng]);
   const streakRef = useRef<HTMLDivElement>(null);
   const ballPlaceholderRef = useRef<HTMLSpanElement>(null);
   const floatingBallRef = useRef<HTMLDivElement>(null);
-
-  const refreshGroups = useCallback(() => { void refetch(); }, [refetch]);
-  const onInsert = useCallback((newGroup: GameGroup) => {
-    setGroups((previous) => previous.some((group) => group.id === newGroup.id) ? previous : [newGroup, ...previous]);
-  }, [setGroups]);
-  const onUpdate = useCallback((updatedGroup: GameGroup) => {
-    setGroups((previous) => previous.map((group) => group.id === updatedGroup.id ? { ...group, ...updatedGroup } : group));
-  }, [setGroups]);
-  const onDelete = useCallback((deletedId: string) => {
-    setGroups((previous) => previous.filter((group) => group.id !== deletedId));
-  }, [setGroups]);
-  useRealtime({ onMemberChange: refreshGroups, onInsert, onUpdate, onDelete });
 
   useEffect(() => {
     const updateClock = () => setClock(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }));
@@ -253,53 +211,22 @@ export default function ShowUpHome() {
     };
   }, [ballPlaceholderRef, floatingBallRef]);
 
-  useEffect(() => {
-    if (!sessionUser?.id) {
-      setInviteCount(0);
-      setMyNextMatch(null);
-      setStats({ joined: 0, hosted: 0, friends: 0 });
-      return;
-    }
-    let active = true;
-    const loadPersonalData = async () => {
-      const [invites, joined, hosted, friends, memberships] = await Promise.all([
-        fetch('/api/invites').then((response) => response.ok ? response.json() : { count: 0 }),
-        supabase.from('group_members').select('id', { count: 'exact', head: true }).eq('user_id', sessionUser.id).eq('status', 'accepted'),
-        supabase.from('game_groups').select('id', { count: 'exact', head: true }).eq('host_id', sessionUser.id),
-        supabase.from('friendships').select('id', { count: 'exact', head: true }).or(`user_a.eq.${sessionUser.id},user_b.eq.${sessionUser.id}`).eq('status', 'accepted'),
-        supabase.from('group_members').select('group_id').eq('user_id', sessionUser.id).eq('status', 'accepted'),
-      ]);
-      if (!active) return;
-      setInviteCount(invites.count || 0);
-      setStats({ joined: joined.count || 0, hosted: hosted.count || 0, friends: friends.count || 0 });
-      const ids = (memberships.data || []).map((membership) => membership.group_id);
-      if (!ids.length) return;
-      const { data } = await supabase.from('game_groups').select('*, host:profiles(name)').in('id', ids).eq('status', 'open').gte('scheduled_at', new Date().toISOString()).order('scheduled_at', { ascending: true }).limit(1).maybeSingle();
-      if (active && data) setMyNextMatch(data as GameGroup);
-    };
-    void loadPersonalData();
-    return () => { active = false; };
-  }, [sessionUser?.id, supabase]);
-
-  const sourceGroups = isGuestPreview ? sampleGroups : groups;
-  const gamesLoading = !isGuestPreview && loading;
-  const gamesError = isGuestPreview ? null : error;
+  const sourceGroups = groups;
+  const gamesLoading = false;
+  const gamesError = null;
   const visibleGroups = useMemo(() => sourceGroups.filter((group) => {
     const matchesSport = selectedSport === 'all' || group.sport === selectedSport;
     const query = search.trim().toLowerCase();
     const text = `${sportName(group.sport)} ${group.location_name} ${group.skill_level} ${group.host_name || group.host?.name || ''}`.toLowerCase();
     return matchesSport && (!query || text.includes(query));
-  }).sort((a, b) => isGuestPreview ? 0 : new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime()), [sourceGroups, selectedSport, search, isGuestPreview]);
+  }).sort((a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime()), [sourceGroups, selectedSport, search]);
 
   const doJoin = async (group: GameGroup) => {
     if (!sessionUser?.id) { router.push('/login'); return; }
     if (statusFor(group) !== 'open') { toast.error(`This match is ${statusFor(group)} and cannot be joined.`); return; }
-    const { data: existing, error: membershipError } = await supabase.from('group_members').select('id').eq('group_id', group.id).eq('user_id', sessionUser.id).eq('status', 'accepted').maybeSingle();
-    if (membershipError) { toast.error(membershipError.message); return; }
-    if (existing) { router.push(`/groups/${group.id}`); return; }
-    const { error: joinError } = await supabase.from('group_members').insert({ group_id: group.id, user_id: sessionUser.id, status: 'accepted' });
-    if (joinError) { toast.error(joinError.message || 'Failed to join group'); return; }
-    setGroups((previous) => previous.map((item) => item.id === group.id ? { ...item, member_count: countIn(item) + 1 } : item));
+    // TODO: connect backend — joins live only in client state.
+    if (!user) { toast.error('Your profile is still loading. Try again.'); return; }
+    if (!joinGame(group.id, user)) { toast.error('This match is full or unavailable.'); return; }
     toast.success(`You’re in. ${sportName(group.sport)} at ${group.location_name}.`);
     router.push(`/groups/${group.id}`);
   };
@@ -329,7 +256,7 @@ export default function ShowUpHome() {
         <div className="sh"><h2>Live <span className="ser">board</span></h2><p>Your area&apos;s games, flipping in as spots fill. Tap Join to take a seat.</p></div>
         <div className="board" id="board" role="region" aria-label="Live games board">
           <div className="bh"><span><b>Games near you</b></span><span>{clock}</span></div>
-          {gamesLoading ? <div className="sy">Loading nearby games…</div> : gamesError ? <div className="sy" role="alert">Nearby games couldn&apos;t load. <button className="jb" onClick={() => void refetch()}>Retry</button></div> : visibleGroups.length ? <>{isGuestPreview && <div className="sy preview-note">Sample games · sign in to join a match</div>}{visibleGroups.slice(0, 6).map((group) => {
+          {gamesLoading ? <div className="sy">Loading nearby games…</div> : gamesError ? <div className="sy" role="alert">Nearby games couldn&apos;t load.</div> : visibleGroups.length ? <>{isGuestPreview && <div className="sy preview-note">Sample games · sign in to join a match</div>}{visibleGroups.slice(0, 6).map((group) => {
             const status = statusFor(group);
             return <div className={`rw ${status === 'full' ? 'x' : ''}`} key={group.id}>
               <span className={`g ${status === 'open' ? 'o' : status === 'live' ? 'l' : 'x'}`}>{sportName(group.sport).toUpperCase()}</span>
@@ -374,8 +301,8 @@ export default function ShowUpHome() {
           <label className="srch"><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search sport, place, skill" aria-label="Search games" /></label>
         </div>
         <div className="hm">
-          <div className="card mapc">{!gamesLoading && !gamesError && <GameMap groups={visibleGroups} center={coords} guestPreview={isGuestPreview} />}{gamesLoading && <div className="emp">Loading map…</div>}{gamesError && <div className="emp" role="alert">Games couldn&apos;t load. <button className="btn sm gh" onClick={() => void refetch()}>Retry</button></div>}</div>
-          <div className="lst">{gamesLoading ? <div className="card emp"><p>Loading nearby games…</p></div> : gamesError ? <div className="card emp" role="alert"><h3>Games couldn&apos;t load</h3><p>{gamesError}</p><button className="btn hot" style={{ marginTop: 14 }} onClick={() => void refetch()}>Retry</button></div> : visibleGroups.length ? <>{isGuestPreview && <p className="mono preview-note">Sample preview games</p>}{visibleGroups.map((group) => <GameCard key={group.id} group={group} guestPreview={isGuestPreview} />)}</> : <div className="card emp"><h3>No games near you yet</h3><p>No open games match that search. Try another sport, or host the first one.</p><Link className="btn hot" style={{ marginTop: 14 }} href="/login">Host a game</Link></div>}</div>
+          <div className="card mapc">{!gamesLoading && !gamesError && <GameMap groups={visibleGroups} center={center} />}{gamesLoading && <div className="emp">Loading map…</div>}{gamesError && <div className="emp" role="alert">Games couldn&apos;t load.</div>}</div>
+          <div className="lst">{gamesLoading ? <div className="card emp"><p>Loading nearby games…</p></div> : gamesError ? <div className="card emp" role="alert"><h3>Games couldn&apos;t load</h3><p>{gamesError}</p></div> : visibleGroups.length ? <>{isGuestPreview && <p className="mono preview-note">Sample preview games</p>}{visibleGroups.map((group) => <GameCard key={group.id} group={group} />)}</> : <div className="card emp"><h3>No games near you yet</h3><p>No open games match that search. Try another sport, or host the first one.</p><Link className="btn hot" style={{ marginTop: 14 }} href={sessionUser ? '/groups/create' : '/login'}>Host a game</Link></div>}</div>
         </div>
       </section>
 

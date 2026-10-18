@@ -2,39 +2,16 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/lib/hooks/useAuth';
-import { createClient } from '@/lib/supabase/client';
+import { useMockData } from '@/lib/mock-data';
 
 export default function ShowUpHeader() {
   const pathname = usePathname();
   const { sessionUser } = useAuth();
-  const supabase = useMemo(() => createClient(), []);
-  const [requestCount, setRequestCount] = useState(0);
-  const [inviteCount, setInviteCount] = useState(0);
-
-  useEffect(() => {
-    if (!sessionUser?.id) {
-      setRequestCount(0);
-      setInviteCount(0);
-      return;
-    }
-    let active = true;
-    void (async () => {
-      const [friendships, invites] = await Promise.all([
-        supabase.from('friendships').select('id', { count: 'exact', head: true }).eq('user_b', sessionUser.id).eq('status', 'pending'),
-        fetch('/api/invites').then((response) => response.ok ? response.json() : { count: 0 }),
-      ]);
-      if (!active) return;
-      setRequestCount(friendships.count || 0);
-      setInviteCount(invites.count || 0);
-    })().catch(() => {
-      if (!active) return;
-      setRequestCount(0);
-      setInviteCount(0);
-    });
-    return () => { active = false; };
-  }, [sessionUser?.id, supabase]);
+  // TODO: connect backend — invite count is derived from placeholder invites.
+  const { invites } = useMockData();
+  const requestCount = sessionUser ? 2 : 0;
+  const inviteCount = sessionUser ? invites.length : 0;
 
   const active = (href: string) => href === '/' ? pathname === '/' : pathname.startsWith(href);
   const hostHref = sessionUser ? '/groups/create' : '/login';

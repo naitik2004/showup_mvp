@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { GameGroup, SPORTS } from '@/types';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
+import { useMockData } from '@/lib/mock-data';
+import { useAuth } from '@/lib/hooks/useAuth';
 import { Calendar, MapPin, Users, Star, X } from 'lucide-react';
 import Link from 'next/link';
 
@@ -17,48 +18,14 @@ interface GroupBottomSheetProps {
 }
 
 export default function GroupBottomSheet({ group, onClose, userId, onJoinSuccess }: GroupBottomSheetProps) {
-  const supabase = createClient();
+  const { members, joinGame } = useMockData();
+  const { user } = useAuth();
   const [isJoined, setIsJoined] = useState(false);
-  const [checkingJoin, setCheckingJoin] = useState(false);
   const [joining, setJoining] = useState(false);
-  const [memberCount, setMemberCount] = useState(0);
-
-  useEffect(() => {
-    if (!group || !userId) return;
-
-    setMemberCount(group.member_count || 1);
-    setIsJoined(false);
-
-    const checkMembership = async () => {
-      setCheckingJoin(true);
-      try {
-        const { data, error } = await supabase
-          .from('group_members')
-          .select('status')
-          .eq('group_id', group.id)
-          .eq('user_id', userId)
-          .maybeSingle();
-
-        if (error) {
-          console.error(error);
-          return;
-        }
-
-        if (data?.status === 'accepted') {
-          setIsJoined(true);
-        }
-      } catch (err) {
-        console.error('Network error:', err);
-      } finally {
-        setCheckingJoin(false);
-      }
-
-    };
-
-    checkMembership();
-  }, [group, userId, supabase]);
 
   if (!group) return null;
+  const memberCount = members[group.id]?.length || group.member_count || 0;
+  const alreadyJoined = isJoined || (!!userId && (members[group.id] || []).some((member) => member.user_id === userId));
   const isLive = group.status === "in_progress";
 
   const sportInfo = SPORTS.find((s) => s.id === group.sport);
@@ -76,18 +43,12 @@ export default function GroupBottomSheet({ group, onClose, userId, onJoinSuccess
 
     setJoining(true);
     try {
-      const { error } = await supabase.from('group_members').insert({
-        group_id: group.id,
-        user_id: userId,
-        status: 'accepted',
-      });
-
-      if (error) {
-        toast.error(error.message || 'Failed to join group');
+      // TODO: connect backend — this join only lives in local React state.
+      if (!user || !joinGame(group.id, user)) {
+        toast.error('This sample match is full or unavailable.');
       } else {
         toast.success(`Successfully joined the ${sportInfo?.name || 'game'}!`);
         setIsJoined(true);
-        setMemberCount((prev) => prev + 1);
         onJoinSuccess(group.id);
       }
     } catch (err: any) {
@@ -258,7 +219,7 @@ export default function GroupBottomSheet({ group, onClose, userId, onJoinSuccess
 
           {/* Actions */}
           <div className="flex gap-3">
-            {isJoined ? (
+            {alreadyJoined ? (
               <Link href={`/groups/${group.id}`} className="flex-1">
               <Button
                 className={`
@@ -288,7 +249,7 @@ export default function GroupBottomSheet({ group, onClose, userId, onJoinSuccess
                 onClick={handleJoin}
                 disabled={
                   joining ||
-                  checkingJoin ||
+                  alreadyJoined ||
                   openSlots === 0 ||
                   group.status === "in_progress"
                 }

@@ -1,20 +1,6 @@
 'use client';
 
-import { useState, useMemo, useRef, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, useMap as useLeafletMap } from 'react-leaflet';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
-
-// Help center mini map when location updates
-function CenterMap({ center }: { center: { lat: number; lng: number } }) {
-  const map = useLeafletMap();
-  useEffect(() => {
-    if (center.lat && center.lng) {
-      map.setView([center.lat, center.lng], 15);
-    }
-  }, [center, map]);
-  return null;
-}
+import { useState } from 'react';
 
 interface MiniMapViewProps {
   initialCenter: { lat: number; lng: number };
@@ -23,60 +9,20 @@ interface MiniMapViewProps {
 
 export default function MiniMapView({ initialCenter, onCoordsChange }: MiniMapViewProps) {
   const [position, setPosition] = useState(initialCenter);
-  useEffect(() => {
-    setPosition(initialCenter);
-  }, [initialCenter]);
-  const markerRef = useRef<any>(null);
+  const [pin, setPin] = useState({ x: 50, y: 50 });
+  const placePin = (event: React.PointerEvent<HTMLDivElement>) => {
+    const bounds = event.currentTarget.getBoundingClientRect();
+    const x = Math.max(4, Math.min(96, ((event.clientX - bounds.left) / bounds.width) * 100));
+    const y = Math.max(8, Math.min(92, ((event.clientY - bounds.top) / bounds.height) * 100));
+    const coords = { lat: initialCenter.lat + (50 - y) * 0.0008, lng: initialCenter.lng + (x - 50) * 0.0008 };
+    setPin({ x, y });
+    setPosition(coords);
+    onCoordsChange(coords);
+  };
 
-  const dragHandlers = useMemo(
-    () => ({
-      dragend() {
-        const marker = markerRef.current;
-        if (marker != null) {
-          const newPos = marker.getLatLng();
-          setPosition(newPos);
-          onCoordsChange({ lat: newPos.lat, lng: newPos.lng });
-        }
-      },
-    }),
-    [onCoordsChange]
-  );
-
-  const customPinIcon = L.divIcon({
-    html: `
-      <div class="relative w-8 h-8 flex items-center justify-center">
-        <!-- Floating Marker -->
-        <span class="text-3xl filter drop-shadow-md select-none transform hover:scale-110 active:scale-95 transition-all">📍</span>
-      </div>
-    `,
-    className: 'draggable-marker-pin',
-    iconSize: [32, 32],
-    iconAnchor: [16, 32],
-  });
-
-  return (
-    <div className="w-full h-48 sm:h-64 rounded-2xl overflow-hidden border border-muted relative z-0">
-      <MapContainer
-        center={[position.lat, position.lng]}
-        zoom={15}
-        className="w-full h-full"
-        zoomControl={false}
-      >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          className="dark-map-tiles"
-          maxZoom={19}
-        />
-        <CenterMap center={initialCenter} />
-        <Marker
-          draggable={true}
-          eventHandlers={dragHandlers}
-          position={[position.lat, position.lng]}
-          icon={customPinIcon}
-          ref={markerRef}
-        />
-      </MapContainer>
-    </div>
-  );
+  return <div className="w-full h-48 sm:h-64 rounded-2xl overflow-hidden border border-muted relative z-0 cursor-crosshair bg-[#183d32]" onPointerDown={placePin} role="application" aria-label="Choose a sample map location">
+    <div className="absolute inset-0 opacity-45" style={{ backgroundImage: 'linear-gradient(35deg, transparent 45%, #f3efe4 46%, #f3efe4 47%, transparent 48%),linear-gradient(145deg, transparent 40%, #f3efe4 41%, #f3efe4 42%, transparent 43%),linear-gradient(90deg, transparent 70%, #d8f03c 71%, #d8f03c 72%, transparent 73%),linear-gradient(0deg, transparent 25%, #f3efe4 26%, #f3efe4 27%, transparent 28%)', backgroundSize: '300px 200px, 360px 240px, 280px 280px, 320px 250px' }} />
+    <span className="absolute -translate-x-1/2 -translate-y-full text-3xl drop-shadow-md" style={{ left: `${pin.x}%`, top: `${pin.y}%` }} aria-label="Selected location">📍</span>
+    <span className="absolute bottom-2 left-2 rounded-lg bg-[#111114]/90 px-2 py-1 text-[10px] text-cream">Tap map to place pin · {position.lat.toFixed(3)}, {position.lng.toFixed(3)}</span>
+  </div>;
 }
