@@ -3,15 +3,10 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/hooks/useAuth';
-import { useMockData } from '@/lib/mock-data';
 
 export default function ShowUpHeader() {
   const pathname = usePathname();
   const { sessionUser } = useAuth();
-  // TODO: connect backend — invite count is derived from placeholder invites.
-  const { invites } = useMockData();
-  const requestCount = sessionUser ? 2 : 0;
-  const inviteCount = sessionUser ? invites.length : 0;
 
   const active = (href: string) => href === '/' ? pathname === '/' : pathname.startsWith(href);
   const hostHref = sessionUser ? '/groups/create' : '/login';
@@ -42,11 +37,6 @@ export default function ShowUpHeader() {
       </header>
       <nav id="nv" aria-label="Main navigation">
         <Link className={active('/') ? 'on' : ''} href="/">Home</Link>
-        <Link className={active('/profile/friends') ? 'on' : ''} href="/profile/friends">
-          Friends{sessionUser && requestCount > 0 && <b>{requestCount}</b>}
-        </Link>
-        <Link className={active('/invites') ? 'on' : ''} href="/invites">Invites{sessionUser && inviteCount > 0 && <b>{inviteCount}</b>}</Link>
-        <Link className={active('/profile') && !active('/profile/friends') ? 'on' : ''} href="/profile">Profile</Link>
       </nav>
     </>
   );

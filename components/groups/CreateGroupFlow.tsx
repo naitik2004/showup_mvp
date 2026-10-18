@@ -4,14 +4,16 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useAuth } from '@/lib/hooks/useAuth';
-import { useMockData } from '@/lib/mock-data';
-import { GameGroup, SkillLevel, Sport, SPORTS } from '@/types';
+import { useMap } from '@/lib/hooks/useMap';
+import { createClient } from '@/lib/supabase/client';
+import { SkillLevel, Sport, SPORTS } from '@/types';
 import { toast } from 'sonner';
 
 export default function CreateGroupFlow() {
   const router = useRouter();
   const { sessionUser, user } = useAuth();
-  const { addGame } = useMockData();
+  const { coords } = useMap();
+  const supabase = createClient();
   const [sport, setSport] = useState<Sport>('football');
   const [venue, setVenue] = useState('');
   const [day, setDay] = useState('0');
@@ -34,12 +36,10 @@ export default function CreateGroupFlow() {
     if (scheduledAt.getTime() <= Date.now()) { toast.error('Scheduled time must be in the future'); return; }
     setSubmitting(true);
     try {
-      // TODO: connect backend — hosted games reset when this tab is refreshed.
-      const group: GameGroup = {
-        id: `local-game-${Date.now()}`,
+      const { data: group, error } = await supabase.from('game_groups').insert({
         host_id: sessionUser.id,
         sport,
-        location: { lat: 28.6139, lng: 77.209 },
+        location: `SRID=4326;POINT(${coords.lng} ${coords.lat})`,
         location_name: venue.trim(),
         max_players: maxPlayers,
         skill_level: skill,
@@ -47,12 +47,9 @@ export default function CreateGroupFlow() {
         expires_at: isPermanent ? null : new Date(scheduledAt.getTime() + 2 * 60 * 60 * 1000).toISOString(),
         is_permanent: isPermanent,
         status: 'open',
-        created_at: new Date().toISOString(),
-        host: user,
-        host_name: user.name,
-        member_count: 1,
-      };
-      addGame(group, user);
+      }).select('id').single();
+      if (error) throw error;
+      if (!group) throw new Error('Could not create this match.');
       toast.success('Game group created successfully!');
       router.push(`/groups/${group.id}`);
     } catch (error: any) {
