@@ -35,21 +35,23 @@ The easiest way to deploy your Next.js app is to use the [Vercel Platform](https
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
 
-## Exact ShowUp reference app
+## ShowUp structure and current status
 
-The home URL (`/`) serves the supplied prelaunch landing page at
-`public/showup/index.html`. Its “Open the app” link opens `/app.html`, which
-serves `public/showup/app.html` using the original CSS and JavaScript.
-Saved demo-player sessions are signed out and the demo login shortcut is removed;
-visitor-created accounts keep their existing sessions.
-The landing page waitlist form is the reference animation only; it does not
-submit email addresses to a backend.
-This preserves the complete responsive UI, animated board, map, and hash routes
-without interference from the Next.js layout. Edit the reference in
-`public/showup/`; its assets use absolute `/showup/` URLs.
+The prelaunch homepage at `/` is a native React page. Start with
+`app/page.tsx`, `components/prelaunch/`, and `data/prelaunch.ts` for changes.
+Styles live in `components/prelaunch/Prelaunch.module.css` and are scoped to
+this page. The original HTML reference is in `docs/references/prelaunch.html`.
+
+“Open the app” goes to `/app.html`, which still serves the standalone preview
+from `public/showup/`. Preview accounts and data remain in browser localStorage
+(`showup.v1`); they are not real Supabase accounts. The demo login shortcut is
+removed. The marketing sample board is illustrative and the waitlist does not
+save emails yet.
+
+See [architecture and migration](docs/architecture.md) for file responsibilities,
+route behavior, and the remaining backend work. Follow `AGENTS.md` when editing.
 
 Run `npm install` and `npm run dev`, then open http://localhost:3000.
-The reference runs without Supabase configuration. Accounts, games, friends,
-chat, and reviews use browser localStorage (`showup.v1`); simulated players
-and board updates are demo behavior, not a shared backend. Existing Next.js
-routes still use the project's original Supabase configuration.
+Marketing and the standalone preview work without Supabase. Configure
+`.env.local` from `.env.example` before testing the older Supabase-backed routes;
+never commit credentials.

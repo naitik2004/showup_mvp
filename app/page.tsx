@@ -1,11 +1,11 @@
 import { Metadata } from 'next';
-import ShowUpHome from '@/components/home/ShowUpHome';
+import PrelaunchPage from '@/components/prelaunch/PrelaunchPage';
 
 export const metadata: Metadata = {
-  title: 'ShowUp — Find Players. Drop A Pin. Show Up.',
-  description: 'The real-time sports matchmaking network for urban India. Discover pickup football, badminton, basketball runs, and cricket nets near you in seconds.',
+  title: 'ShowUp — Find players. Join matches. Build your sports network.',
+  description: 'Find nearby sports games, meet your next crew, and get ready to show up. Explore the ShowUp preview.',
 };
 
 export default function HomePage() {
-  return <ShowUpHome />;
+  return <PrelaunchPage />;
 }
