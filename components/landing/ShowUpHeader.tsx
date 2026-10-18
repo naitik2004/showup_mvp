@@ -38,7 +38,8 @@ export default function ShowUpHeader() {
   }, [sessionUser?.id, firebaseUser, supabase]);
 
   const active = (href: string) => href === '/' ? pathname === '/' : pathname.startsWith(href);
-  const hostHref = '/groups/create';
+  const hostHref = sessionUser ? '/groups/create' : '/login';
+  const joinHref = sessionUser ? '/#board' : '/login';
 
   return (
     <>
@@ -57,17 +58,20 @@ export default function ShowUpHeader() {
           <Link className="logo" href="/" aria-label="ShowUp home">
             SH<span className="ow"><svg><use href="#showup-ball" /></svg></span>W&nbsp;UP<sup>BETA</sup>
           </Link>
-          <nav id="nv" aria-label="Main navigation">
-            <Link className={active('/') ? 'on' : ''} href="/">Home</Link>
-            <Link className={active('/profile/friends') ? 'on' : ''} href="/profile/friends">
-              Friends{sessionUser && requestCount > 0 && <b>{requestCount}</b>}
-            </Link>
-            <Link className={active('/invites') ? 'on' : ''} href="/invites">Invites{sessionUser && inviteCount > 0 && <b>{inviteCount}</b>}</Link>
-            <Link className={active('/profile') && !active('/profile/friends') ? 'on' : ''} href="/profile">Profile</Link>
-          </nav>
-          <Link className="btn" href={hostHref}>+ Host a game</Link>
+          <div className="nav-actions">
+            <Link className="btn gh" href={joinHref}>Join a game</Link>
+            <Link className="btn" href={hostHref}>+ Host a game</Link>
+          </div>
         </div>
       </header>
+      <nav id="nv" aria-label="Main navigation">
+        <Link className={active('/') ? 'on' : ''} href="/">Home</Link>
+        <Link className={active('/profile/friends') ? 'on' : ''} href="/profile/friends">
+          Friends{sessionUser && requestCount > 0 && <b>{requestCount}</b>}
+        </Link>
+        <Link className={active('/invites') ? 'on' : ''} href="/invites">Invites{sessionUser && inviteCount > 0 && <b>{inviteCount}</b>}</Link>
+        <Link className={active('/profile') && !active('/profile/friends') ? 'on' : ''} href="/profile">Profile</Link>
+      </nav>
     </>
   );
 }
