@@ -749,20 +749,13 @@
   background: var(--chalk);
   border-color: var(--chalk);
 }
-.page :global(.confirmation) {
-  display: none;
+.page :global(.waitlistConfirmation) {
   font: 900 clamp(30px,5vw,56px) var(--sans);
   font-stretch: 125%;
   text-transform: uppercase;
   letter-spacing: -.03em;
   line-height: .95;
   max-width: 14ch;
-}
-.page :global(.waitlistForm.submitted) {
-  display: none;
-}
-.page :global(.waitlistForm.submitted+.confirmation) {
-  display: block;
 }
 .page :global(.waitlistNote) {
   font: 400 13px var(--mono);
@@ -894,15 +887,6 @@
 .page :global(.reveal.visible .ticket) {
   transform: none;
   animation: printTicket 1.4s cubic-bezier(.2,.9,.2,1);
-}
-
-.page :global(.waitlistStatus) {
-  max-width: 620px;
-  margin-top: 16px;
-}
-
-.page :global(.waitlistStatus:empty) {
-  display: none;
 }
 
 @keyframes printTicket {

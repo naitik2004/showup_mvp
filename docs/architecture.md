@@ -49,15 +49,17 @@ by the native prelaunch page (except the old app header).
 ## Intentional changes from the reference
 
 - Sample board joins open the app instead of claiming a real seat was reserved.
-- The waitlist never reports that an email was saved without a working endpoint.
+- At the founder’s request, the waitlist previews the reference confirmation
+  “You’re on the list. See you on the court.” after valid submission. This is
+  presentation behavior only; a real registration endpoint is still pending.
 - The unverified waiting-player count has been replaced with an invitation.
 - The reference launch date remains in `data/prelaunch.ts`; confirm it before
   announcing a public launch. Countdown days support more than two digits.
 - All six feature rows retain the corrected readable hover background.
 - The logo ball makes four controlled side contacts on hover. The hero O is a
   keyboard-accessible squeezable ball. Motion respects reduced-motion settings.
-- Waitlist submission uses a plain button and immediately explains that
-  registration is closed; it never sends or saves the email address.
+- Waitlist submission replaces the plain form with the large reference
+  confirmation heading. No email address is sent or saved by this preview.
 
 ## Backend configuration and remaining work
 
