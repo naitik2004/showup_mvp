@@ -12,7 +12,7 @@ export default function MatchPassPreview() {
   const details = [['Gate', pass.venue], ['Time', pass.time], ['Skill', pass.skill], ['Host', pass.host]];
 
   return (
-    <section className="section passSection" id="pass" aria-label="Sample match pass">
+    <section className="section" id="pass" aria-label="Sample match pass">
       <div className="container passLayout">
         <div className="reveal">
           <SectionLabel gate="01" title="The pass" />
@@ -28,7 +28,7 @@ export default function MatchPassPreview() {
             }}>{moreSports ? '− Fewer sports' : '+ More sports'}</button>
           </div>
         </div>
-        <div className="reveal passPreview">
+        <div className="reveal">
           <div className="printerSlot" />
           <div className="ticketWindow">
             <div key={pass.sport} className="ticket" style={{ '--pc': pass.color } as CSSProperties} aria-live="polite">
