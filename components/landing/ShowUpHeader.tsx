@@ -37,6 +37,7 @@ export default function ShowUpHeader() {
       </header>
       <nav id="nv" aria-label="Main navigation">
         <Link className={active('/') ? 'on' : ''} href="/">Home</Link>
+        {sessionUser && <Link className={active('/invites') ? 'on' : ''} href="/invites">Invites</Link>}
       </nav>
     </>
   );
