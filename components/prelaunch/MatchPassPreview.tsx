@@ -28,7 +28,7 @@ export default function MatchPassPreview() {
             <div key={pass.sport} className="ticket" style={{ '--pc': pass.color } as CSSProperties} aria-live="polite">
               <div className="ticketMain">
                 <div className="mono">Match pass · ShowUp</div>
-                <h3>{pass.sport}</h3>
+                <h3 className="ticketSport">{pass.sport}</h3>
                 <div className="ticketFields">
                   {details.map(([label, value]) => <div key={label}><small>{label}</small><b>{value}</b></div>)}
                 </div>

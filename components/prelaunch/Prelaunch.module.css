@@ -165,7 +165,7 @@
   font-size: 14px;
 }
 .page :global(.hero) {
-  padding: 104px 0 80px;
+  padding: calc(76px + env(safe-area-inset-top, 0px)) 0 80px;
 }
 .page :global(.hero .sectionLabel) {
   margin-top: 6px;
@@ -461,7 +461,7 @@
 .page :global(.ticket) {
   --pc: var(--clay);
   display: grid;
-  grid-template-columns: 1fr 150px;
+  grid-template-columns: minmax(0, 1fr) 150px;
   background: #fbf8ef;
   border-radius: 0 0 18px 18px;
   position: relative;
@@ -486,6 +486,8 @@
   transition: background .4s;
 }
 .page :global(.ticketMain) {
+  min-width: 0;
+  container-type: inline-size;
   padding: 28px 28px 28px 42px;
   border-right: 2px dashed #15130f33;
 }
@@ -495,8 +497,10 @@
   color: var(--mute);
   text-transform: uppercase;
 }
-.page :global(.ticketMain h3) {
-  font-size: clamp(40px,6vw,76px);
+/* Size the sport against its own ticket column, rather than the viewport. */
+.page :global(.ticketSport) {
+  font-size: clamp(12px, 10cqi, 64px);
+  white-space: nowrap;
   margin: 8px 0 22px;
 }
 .page :global(.ticketFields) {
@@ -1004,13 +1008,6 @@
   font-size: clamp(40px, 12.7vw, 204px);
 }
 
-.page :global(.ticketMain) {
-  min-width: 0;
-}
-
-.page :global(.ticketMain h3) {
-  font-size: clamp(32px, 4.4vw, 64px);
-}
 
 .page :global(.passLayout > *) {
   min-width: 0;
@@ -1019,11 +1016,5 @@
 @media (max-width: 1000px) {
   .page :global(.passLayout) {
     grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 560px) {
-  .page :global(.ticketMain h3) {
-    font-size: clamp(16px, 4.5vw, 25px);
   }
 }
