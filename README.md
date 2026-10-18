@@ -37,8 +37,13 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 
 ## Exact ShowUp reference app
 
-The home URL (`/`) and `/app.html` serve `public/showup/app.html` directly,
-using the original CSS and JavaScript from the supplied ShowUp reference.
+The home URL (`/`) serves the supplied prelaunch landing page at
+`public/showup/index.html`. Its “Open the app” link opens `/app.html`, which
+serves `public/showup/app.html` using the original CSS and JavaScript.
+Saved demo-player sessions are signed out and the demo login shortcut is removed;
+visitor-created accounts keep their existing sessions.
+The landing page waitlist form is the reference animation only; it does not
+submit email addresses to a backend.
 This preserves the complete responsive UI, animated board, map, and hash routes
 without interference from the Next.js layout. Edit the reference in
 `public/showup/`; its assets use absolute `/showup/` URLs.
