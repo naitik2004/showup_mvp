@@ -74,6 +74,8 @@ section.s{padding:clamp(80px,10vw,140px) 0}
 /* index */
 .ix{display:grid;grid-template-columns:90px 1fr 1fr 40px;gap:20px;align-items:baseline;padding:clamp(20px,2.6vw,34px) 0;border-top:2px solid var(--ink);position:relative;overflow:hidden;transition:color .3s;cursor:default}
 .ix:last-child{border-bottom:2px solid var(--ink)}
+/* Keep the animated dark fill behind the text, inside each feature row. */
+.ix{isolation:isolate}
 .ix::before{content:'';position:absolute;inset:0;background:var(--ink);transform:scaleY(0);transform-origin:bottom;transition:transform .45s cubic-bezier(.2,.8,.2,1);z-index:-1}.ix:hover::before{transform:scaleY(1)}.ix:hover{color:var(--chalk)}.ix>*{position:relative}
 .ix .mono{font-size:13px}.ix h3{font-size:clamp(30px,5vw,68px)}.ix p{max-width:40ch}.ix i{font-style:normal;font-size:28px;transition:transform .3s}.ix:hover i{transform:translateX(8px);color:var(--ball)}
 @media(max-width:800px){.ix{grid-template-columns:50px 1fr}.ix p{grid-column:2}.ix i{display:none}}
