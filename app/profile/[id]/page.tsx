@@ -25,7 +25,7 @@ export default function PlayerProfilePage() {
     const load = async () => {
       setLoading(true);
       setError('');
-      const { data, error: profileError } = await supabase.from('users').select('*').eq('id', id).maybeSingle();
+      const { data, error: profileError } = await supabase.from('profiles').select('*').eq('id', id).maybeSingle();
       if (!active) return;
       if (profileError) setError(profileError.message);
       setProfile(data);

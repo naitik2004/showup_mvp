@@ -5,7 +5,7 @@ export const runtime = 'nodejs';
 
 export async function GET(request: Request) {
   try {
-    const { supabase, userId } = await getInviteActor(request);
+    const { supabase, userId } = await getInviteActor();
     const url = new URL(request.url);
     const gameId = url.searchParams.get('gameId');
     if (gameId) {
@@ -25,13 +25,13 @@ export async function GET(request: Request) {
       const blockedIds = new Set((blocks || []).map((block) => block.blocker_id === userId ? block.blocked_id : block.blocker_id));
       const availableIds = friendIds.filter((id) => !memberIds.has(id) && !blockedIds.has(id));
       if (!availableIds.length) return NextResponse.json({ friends: [] });
-      const { data: friends, error: usersError } = await supabase.from('users').select('id,name').in('id', availableIds).order('name');
+      const { data: friends, error: usersError } = await supabase.from('profiles').select('id,name').in('id', availableIds).order('name');
       if (usersError) throw usersError;
       return NextResponse.json({ friends: (friends || []).map((friend) => ({ ...friend, invited: invitedIds.has(friend.id) })) });
     }
 
     const { data: invites, error } = await supabase.from('game_invites')
-      .select('id,game_id,from_user,to_user,created_at,status,game:game_groups!game_invites_game_id_fkey(id,sport,location_name,scheduled_at,max_players,status),sender:users!game_invites_from_user_fkey(id,name)')
+      .select('id,game_id,from_user,to_user,created_at,status,game:game_groups!game_invites_game_id_fkey(id,sport,location_name,scheduled_at,max_players,status),sender:profiles!game_invites_from_user_fkey(id,name)')
       .eq('to_user', userId).eq('status', 'pending').order('created_at', { ascending: false });
     if (error) throw error;
     const gameIds = (invites || []).map((invite: any) => invite.game_id);
@@ -49,7 +49,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const { supabase, userId } = await getInviteActor(request);
+    const { supabase, userId } = await getInviteActor();
     const body = await request.json();
     const action = body?.action;
 
@@ -62,7 +62,7 @@ export async function POST(request: Request) {
     }
 
     if (action === 'accept') {
-      const { data, error } = await supabase.rpc('accept_game_invite', { p_invite_id: body.inviteId, p_actor_id: userId });
+      const { data, error } = await supabase.rpc('accept_game_invite', { p_invite_id: body.inviteId });
       if (error) return NextResponse.json({ error: error.message }, { status: error.message.startsWith('Too late.') ? 409 : 400 });
       return NextResponse.json({ ok: true, ...data });
     }

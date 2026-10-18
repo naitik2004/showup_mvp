@@ -58,7 +58,7 @@ export default function GroupDetailPage() {
       setCurrentUserId(sessionUser?.id || '');
 
       const { data: profile } = sessionUser ? await supabase
-      .from('users')
+      .from('profiles')
       .select('name')
       .eq('id', sessionUser.id)
       .single() : { data: null };
@@ -70,7 +70,7 @@ export default function GroupDetailPage() {
         // Fetch group details
         const { data: groupData, error: groupError } = await supabase
           .from('game_groups')
-          .select('*, host:users(*)')
+          .select('*, host:profiles(*)')
           .eq('id', groupId)
           .single();
 
@@ -97,7 +97,7 @@ export default function GroupDetailPage() {
         // Fetch members
         const { data: membersData, error: membersError } = await supabase
           .from('group_members')
-          .select('*, user:users(*)')
+          .select('*, user:profiles(*)')
           .eq('group_id', groupId);
 
         if (!membersError) {
@@ -130,7 +130,7 @@ export default function GroupDetailPage() {
   //       async () => {
   //         const { data } = await supabase
   //           .from('group_members')
-  //           .select('*, user:users(*)')
+  //           .select('*, user:profiles(*)')
   //           .eq('group_id', groupId);
 
   //         if (data) {
@@ -164,7 +164,7 @@ export default function GroupDetailPage() {
 
         const { data } = await supabase
           .from('group_members')
-          .select('*, user:users(*)')
+          .select('*, user:profiles(*)')
           .eq('group_id', groupId);
 
         console.log('NEW MEMBERS DATA', data);

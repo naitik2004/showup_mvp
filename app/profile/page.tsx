@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase/client';
 import { SPORTS } from '@/types';
 
 export default function ProfileHomePage() {
-  const { sessionUser, firebaseUser, user, loading: authLoading, signOut } = useAuth();
+  const { sessionUser, user, email, loading: authLoading, signOut } = useAuth();
   const supabase = useMemo(() => createClient(), []);
   const [stats, setStats] = useState({ hosted: 0, joined: 0, friends: 0 });
   const [error, setError] = useState('');
@@ -33,7 +33,7 @@ export default function ProfileHomePage() {
   if (authLoading) return <main className="wrap" id="app"><section className="card emp">Loading profile…</section></main>;
   if (!sessionUser) return <main className="wrap" id="app"><h1 className="ph">Your profile</h1><section className="card emp"><h3>Sign in to see your profile</h3><p>Your games, friends, and favourite sports will appear here.</p><Link className="btn hot" style={{ marginTop: 14 }} href="/login">Sign in</Link></section></main>;
 
-  const name = user?.name || firebaseUser?.displayName || firebaseUser?.email?.split('@')[0] || 'Player';
+  const name = user?.name || email?.split('@')[0] || 'Player';
   const sports = user?.preferred_sports || [];
   return (
     <main className="wrap" id="app">
