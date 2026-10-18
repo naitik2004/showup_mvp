@@ -34,3 +34,17 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Exact ShowUp reference app
+
+The home URL (`/`) and `/app.html` serve `public/showup/app.html` directly,
+using the original CSS and JavaScript from the supplied ShowUp reference.
+This preserves the complete responsive UI, animated board, map, and hash routes
+without interference from the Next.js layout. Edit the reference in
+`public/showup/`; its assets use absolute `/showup/` URLs.
+
+Run `npm install` and `npm run dev`, then open http://localhost:3000.
+The reference runs without Supabase configuration. Accounts, games, friends,
+chat, and reviews use browser localStorage (`showup.v1`); simulated players
+and board updates are demo behavior, not a shared backend. Existing Next.js
+routes still use the project's original Supabase configuration.
