@@ -390,7 +390,7 @@
 /* pass */
 .page :global(.passLayout) {
   display: grid;
-  grid-template-columns: .65fr 1.35fr;
+  grid-template-columns: .8fr 1.2fr;
   gap: clamp(30px,5vw,80px);
   align-items: center;
 }
@@ -433,16 +433,15 @@
 .page :global(.ticket) {
   --pc: var(--clay);
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 128px;
-  min-height: 340px;
+  grid-template-columns: minmax(0, 1fr) 150px;
   background: #fbf8ef;
   border-radius: 0 0 18px 18px;
   position: relative;
   transform: translateY(-102%);
   transition: transform 1.4s cubic-bezier(.2,.9,.2,1);
   box-shadow: 0 30px 50px -30px #15130f66;
-  -webkit-mask: radial-gradient(circle 12px at calc(100% - 128px) 0,transparent 98%,#000);
-  mask: radial-gradient(circle 12px at calc(100% - 128px) 0,transparent 98%,#000);
+  -webkit-mask: radial-gradient(circle 12px at calc(100% - 150px) 0,transparent 98%,#000);
+  mask: radial-gradient(circle 12px at calc(100% - 150px) 0,transparent 98%,#000);
 }
 .page :global(.ticket.visible) {
   transform: none;
@@ -461,7 +460,7 @@
 .page :global(.ticketMain) {
   min-width: 0;
   container-type: inline-size;
-  padding: 34px 22px 34px 36px;
+  padding: 28px 28px 28px 42px;
   border-right: 2px dashed #15130f33;
 }
 .page :global(.ticketMain .mono) {
@@ -472,27 +471,29 @@
 }
 /* Size the sport against its own ticket column, rather than the viewport. */
 .page :global(.ticketSport) {
-  font-size: clamp(12px, 11.2cqi, 64px);
+  font-size: clamp(12px, 10cqi, 64px);
   white-space: nowrap;
-  margin: 12px 0 28px;
+  margin: 8px 0 22px;
 }
 .page :global(.ticketFields) {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 24px 20px;
+  gap: 16px 20px;
 }
 .page :global(.ticketFields small) {
   display: block;
-  font: 400 12px var(--mono);
+  font: 400 10.5px var(--mono);
   letter-spacing: .12em;
   color: var(--mute);
   text-transform: uppercase;
 }
 .page :global(.ticketFields b) {
-  font: 500 16px var(--mono);
+  font: 500 15px var(--mono);
   text-transform: uppercase;
 }
 .page :global(.ticketStub) {
+  min-width: 0;
+  container-type: inline-size;
   padding: 24px 18px;
   display: flex;
   flex-direction: column;
@@ -506,13 +507,13 @@
   color: var(--mute);
 }
 .page :global(.ticketStub strong) {
-  font: 900 64px/1 var(--sans);
+  font: 900 56px/1 var(--sans);
   font-stretch: 125%;
 }
 .page :global(.barcode) {
   display: flex;
   gap: 2px;
-  height: 72px;
+  height: 60px;
   width: 100%;
   max-width: 124px;
   align-items: stretch;
@@ -525,7 +526,7 @@
 }
 @media (max-width:560px) {
   .page :global(.ticket) {
-    grid-template-columns: minmax(0, 1fr) 92px;
+    grid-template-columns: 1fr 104px;
     -webkit-mask: none;
     mask: none;
   }
@@ -935,4 +936,15 @@
   .page :global(.ticketStub) {
     padding: 24px 10px;
   }
+}
+
+/* Four-character seat counts need to fit the stub as well. */
+.page :global(.ticketStub .wideSeat) {
+  font-size: clamp(20px, 32cqi, 48px);
+}
+
+.page :global(.heroTitleContent) {
+  display: inline-block;
+  width: max-content;
+  white-space: nowrap;
 }

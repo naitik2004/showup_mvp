@@ -19,6 +19,7 @@ components/prelaunch/
   Prelaunch.module.css              Scoped, readable styles
   PrelaunchNavigation.tsx           Scroll-aware navigation
   PrelaunchHero.tsx                  Hero content
+  FullWidthHeading.tsx               Font-aware heading fit to available width
   SampleGamesBoard.tsx               Explicitly illustrative match board
   FlipText.tsx                       Reusable split-flap animation
   MatchPassPreview.tsx               Sport selection and sample ticket
@@ -29,8 +30,6 @@ components/prelaunch/
   BallIcon.tsx                       Shared SVG artwork
   SqueezableBall.tsx                 Keyboard/click hero-ball interaction
   PlayfulBall.module.css             Logo ricochet and hero squeeze motion
-  LockedWaitlistButton.tsx           Decorative metallic chains and padlock
-  LockedWaitlistButton.module.css    Scoped chain and lock animation
   SectionLabel.tsx                   Shared gate label
   hooks/useReveal.ts                 Scoped intersection observer with cleanup
 data/prelaunch.ts                    Content, sample data, app URL, preview date
@@ -57,8 +56,8 @@ by the native prelaunch page (except the old app header).
 - All six feature rows retain the corrected readable hover background.
 - The logo ball makes four controlled side contacts on hover. The hero O is a
   keyboard-accessible squeezable ball. Motion respects reduced-motion settings.
-- Waitlist submission shows a local chain-and-lock sequence before the closed
-  registration notice; it never sends or saves the email address.
+- Waitlist submission uses a plain button and immediately explains that
+  registration is closed; it never sends or saves the email address.
 
 ## Backend configuration and remaining work
 

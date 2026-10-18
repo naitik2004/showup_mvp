@@ -1,30 +1,15 @@
 'use client';
 
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useState } from 'react';
 import LaunchCountdown from './LaunchCountdown';
 import SectionLabel from './SectionLabel';
-import LockedWaitlistButton, { WaitlistPhase } from './LockedWaitlistButton';
 
 /** Do not claim a subscription was saved until a real waitlist endpoint exists. */
 export default function WaitlistSection() {
   const [notice, setNotice] = useState('');
-  const [phase, setPhase] = useState<WaitlistPhase>('idle');
-  const [attempt, setAttempt] = useState(0);
-
-  useEffect(() => {
-    if (phase !== 'locking') return;
-    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const timer = window.setTimeout(() => {
-      setPhase('locked');
-      setNotice('Waitlist registration is not open yet. Your email has not been saved. You can explore ShowUp using “Open the app”.');
-    }, reducedMotion ? 0 : 1000);
-    return () => window.clearTimeout(timer);
-  }, [phase, attempt]);
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setNotice('');
-    setPhase('locking');
-    setAttempt((count) => count + 1);
+    setNotice('Waitlist registration is not open yet. Your email has not been saved. You can explore ShowUp using “Open the app”.');
   };
 
   return (
@@ -33,9 +18,9 @@ export default function WaitlistSection() {
         <SectionLabel gate="04" title="Doors open soon" />
         <h2>Boarding<br />starts in</h2>
         <LaunchCountdown />
-        <form className="waitlistForm" onSubmit={submit} noValidate>
-          <input type="email" name="email" autoComplete="email" placeholder="you@email.com" aria-label="Email" aria-describedby="waitlist-status" />
-          <LockedWaitlistButton phase={phase} attempt={attempt} />
+        <form className="waitlistForm" onSubmit={submit}>
+          <input type="email" name="email" autoComplete="email" required placeholder="you@email.com" aria-label="Email" aria-describedby="waitlist-status" />
+          <button className="button" type="submit">Reserve my spot</button>
         </form>
         <p id="waitlist-status" role="status" className="waitlistStatus">{notice}</p>
         <div className="waitlistNote">
