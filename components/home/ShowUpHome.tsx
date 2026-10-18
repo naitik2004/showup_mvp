@@ -127,7 +127,7 @@ function BentoCard({ color, label, value, title, detail, foot, icon, href }: { c
 
 export default function ShowUpHome() {
   const router = useRouter();
-  const { sessionUser, user, firebaseUser, loading: authLoading } = useAuth();
+  const { sessionUser, user, loading: authLoading } = useAuth();
   const { coords } = useMap();
   const { groups, setGroups, loading, error, refetch } = useGroups(coords.lat, coords.lng);
   const supabase = useMemo(() => createClient(), []);
@@ -254,7 +254,7 @@ export default function ShowUpHome() {
   }, [ballPlaceholderRef, floatingBallRef]);
 
   useEffect(() => {
-    if (!sessionUser?.id || !firebaseUser) {
+    if (!sessionUser?.id) {
       setInviteCount(0);
       setMyNextMatch(null);
       setStats({ joined: 0, hosted: 0, friends: 0 });
@@ -262,9 +262,8 @@ export default function ShowUpHome() {
     }
     let active = true;
     const loadPersonalData = async () => {
-      const token = await firebaseUser.getIdToken();
       const [invites, joined, hosted, friends, memberships] = await Promise.all([
-        fetch('/api/invites', { headers: { Authorization: `Bearer ${token}` } }).then((response) => response.ok ? response.json() : { count: 0 }),
+        fetch('/api/invites').then((response) => response.ok ? response.json() : { count: 0 }),
         supabase.from('group_members').select('id', { count: 'exact', head: true }).eq('user_id', sessionUser.id).eq('status', 'accepted'),
         supabase.from('game_groups').select('id', { count: 'exact', head: true }).eq('host_id', sessionUser.id),
         supabase.from('friendships').select('id', { count: 'exact', head: true }).or(`user_a.eq.${sessionUser.id},user_b.eq.${sessionUser.id}`).eq('status', 'accepted'),
@@ -275,12 +274,12 @@ export default function ShowUpHome() {
       setStats({ joined: joined.count || 0, hosted: hosted.count || 0, friends: friends.count || 0 });
       const ids = (memberships.data || []).map((membership) => membership.group_id);
       if (!ids.length) return;
-      const { data } = await supabase.from('game_groups').select('*, host:users(name)').in('id', ids).eq('status', 'open').gte('scheduled_at', new Date().toISOString()).order('scheduled_at', { ascending: true }).limit(1).maybeSingle();
+      const { data } = await supabase.from('game_groups').select('*, host:profiles(name)').in('id', ids).eq('status', 'open').gte('scheduled_at', new Date().toISOString()).order('scheduled_at', { ascending: true }).limit(1).maybeSingle();
       if (active && data) setMyNextMatch(data as GameGroup);
     };
     void loadPersonalData();
     return () => { active = false; };
-  }, [sessionUser?.id, firebaseUser, supabase]);
+  }, [sessionUser?.id, supabase]);
 
   const sourceGroups = isGuestPreview ? sampleGroups : groups;
   const gamesLoading = !isGuestPreview && loading;

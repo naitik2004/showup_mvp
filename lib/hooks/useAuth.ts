@@ -1,105 +1,110 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { signInWithPopup, signOut as fbSignOut, onAuthStateChanged } from 'firebase/auth';
-import { auth, googleProvider } from '@/lib/firebase';
-import { User, Sport } from '@/types';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
+import { User, Sport } from '@/types';
 
 export function useAuth() {
   const router = useRouter();
-  const [firebaseUser, setFirebaseUser] = useState<any>(null);
+  const supabase = useMemo(() => createClient(), []);
   const [user, setUser] = useState<User | null>(null);
+  const [email, setEmail] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchProfile = useCallback(async (fbUser: any) => {
-    try {
-      const token = await fbUser.getIdToken();
-      const response = await fetch('/api/auth/profile', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({}),
-      });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error || 'Could not load your profile.');
-      setUser(result.profile as User);
-      return result.profile as User;
-    } catch (err) {
-      console.error('Error fetching profile:', err);
-      setUser(null);
-      return null;
-    }
-  }, []);
+  const loadProfile = useCallback(async (userId: string) => {
+    const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle();
+    if (error) throw error;
+    setUser(data as User | null);
+    return data as User | null;
+  }, [supabase]);
 
   useEffect(() => {
-    if (!auth) {
-      setLoading(false);
-      return;
-    }
-    const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
-      if (fbUser) {
-        setFirebaseUser(fbUser);
-        const profile = await fetchProfile(fbUser);
-        if (!profile) {
-          console.error('The signed-in Firebase user has no ShowUp profile.');
-        }
-      } else {
-        setFirebaseUser(null);
+    let alive = true;
+    const sync = async () => {
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (!alive) return;
+      setEmail(authUser?.email || null);
+      try {
+        if (authUser) await loadProfile(authUser.id);
+        else setUser(null);
+      } catch (error) {
+        console.error('Could not load profile:', error);
         setUser(null);
+      } finally {
+        if (alive) setLoading(false);
       }
-      setLoading(false);
+    };
+    void sync();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, authSession) => {
+      setEmail(authSession?.user.email || null);
+      if (!authSession) {
+        setUser(null);
+        setLoading(false);
+      } else {
+        setLoading(true);
+        window.setTimeout(() => { void loadProfile(authSession.user.id).finally(() => setLoading(false)); }, 0);
+      }
     });
-    return () => unsubscribe();
-  }, [fetchProfile]);
+    return () => { alive = false; subscription.unsubscribe(); };
+  }, [loadProfile, supabase]);
 
-  const signInWithGoogle = async () => {
-    try {
-      if (!auth) throw new Error('Firebase sign-in is not configured.');
-      const result = await signInWithPopup(auth, googleProvider);
-      const fbUser = result.user;
+  const signInWithPassword = async (emailAddress: string, password: string) => {
+    const { data, error } = await supabase.auth.signInWithPassword({ email: emailAddress, password });
+    if (error) return { success: false as const, error: error.message };
+    setEmail(data.user.email || null);
+    const profile = await loadProfile(data.user.id);
+    return { success: true as const, onboardingComplete: !!profile?.onboarded };
+  };
 
-      // Check if onboarding is complete
-      const profile = await fetchProfile(fbUser);
-      const onboardingComplete = !!(profile?.onboarded);
-      return { success: true, onboardingComplete };
-    } catch (err: any) {
-      return { success: false, error: err?.message || 'Google sign-in failed' };
+  const signUp = async (name: string, emailAddress: string, password: string, city: string) => {
+    const requestedNext = new URLSearchParams(window.location.search).get('next');
+    const safeNext = requestedNext?.startsWith('/') && !requestedNext.startsWith('//') ? requestedNext : '/';
+    const { data, error } = await supabase.auth.signUp({
+      email: emailAddress,
+      password,
+      options: {
+        data: { name: name.trim(), city: city.trim() },
+        emailRedirectTo: `${window.location.origin}/callback?next=${encodeURIComponent(safeNext)}`,
+      },
+    });
+    if (error) return { success: false as const, error: error.message };
+    if (data.user && data.user.identities?.length === 0) {
+      return { success: false as const, error: 'That email is already registered. Sign in instead.' };
     }
+    if (!data.session) return { success: true as const, needsEmailConfirmation: true as const };
+    setEmail(data.user?.email || null);
+    if (data.user) await loadProfile(data.user.id);
+    return { success: true as const, needsEmailConfirmation: false as const };
   };
 
   const signOut = async () => {
-    if (!auth) return;
-    await fbSignOut(auth);
+    const { error } = await supabase.auth.signOut();
+    if (error) throw error;
+    setUser(null);
+    setEmail(null);
     router.push('/login');
+    router.refresh();
   };
 
   const updateProfile = async (name: string, city: string, preferredSports: Sport[]) => {
-    if (!firebaseUser) throw new Error('Not authenticated');
-    try {
-      const token = await firebaseUser.getIdToken();
-      const response = await fetch('/api/auth/profile', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, city, preferred_sports: preferredSports, onboarded: true }),
-      });
-      const result = await response.json();
-      if (!response.ok) return { data: null, error: new Error(result.error || 'Could not update your profile.') };
-      setUser(result.profile as User);
-      return { data: result.profile as User, error: null };
-    } catch (error: any) {
-      return { data: null, error };
-    }
+    const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+    if (authError || !authUser) return { data: null, error: authError || new Error('Not authenticated') };
+    const { data, error } = await supabase.from('profiles').update({
+      name, city, preferred_sports: preferredSports, onboarded: true,
+    }).eq('id', authUser.id).select('*').single();
+    if (error) return { data: null, error };
+    setUser(data as User);
+    return { data: data as User, error: null };
   };
 
-  // Backward-compat: other pages use sessionUser?.id
-  const sessionUser = user ? { id: user.id } : null;
-
   return {
-    firebaseUser,
-    sessionUser,
+    sessionUser: user ? { id: user.id } : null,
     user,
+    email,
     loading,
-    signInWithGoogle,
+    signInWithPassword,
+    signUp,
     signOut,
     updateProfile,
   };

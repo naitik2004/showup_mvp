@@ -26,7 +26,7 @@ export function useRealtime({ onInsert, onUpdate, onDelete, onMemberChange}: Rea
           if (onInsert) {
             // Retrieve additional host profile details
             const { data: user } = await supabase
-              .from('users')
+              .from('profiles')
               .select('name')
               .eq('id', payload.new.host_id)
               .maybeSingle();

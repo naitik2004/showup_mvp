@@ -6,7 +6,7 @@ import { useAuth } from '@/lib/hooks/useAuth';
 type FriendInvite = { id: string; name: string; invited: boolean };
 
 export default function InviteFriendsDialog({ gameId }: { gameId: string }) {
-  const { firebaseUser } = useAuth();
+  const { sessionUser } = useAuth();
   const dialog = useRef<HTMLDialogElement>(null);
   const [open, setOpen] = useState(false);
   const [friends, setFriends] = useState<FriendInvite[]>([]);
@@ -22,12 +22,11 @@ export default function InviteFriendsDialog({ gameId }: { gameId: string }) {
   }, [open]);
 
   const loadFriends = async () => {
-    if (!firebaseUser) return;
+    if (!sessionUser) return;
     setLoading(true);
     setError('');
     try {
-      const token = await firebaseUser.getIdToken();
-      const response = await fetch(`/api/invites?gameId=${encodeURIComponent(gameId)}`, { headers: { Authorization: `Bearer ${token}` } });
+      const response = await fetch(`/api/invites?gameId=${encodeURIComponent(gameId)}`);
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'Friends could not be loaded.');
       setFriends(result.friends || []);
@@ -38,14 +37,13 @@ export default function InviteFriendsDialog({ gameId }: { gameId: string }) {
 
   const show = () => { setOpen(true); void loadFriends(); };
   const send = async (friend: FriendInvite) => {
-    if (!firebaseUser) return;
+    if (!sessionUser) return;
     setBusyId(friend.id);
     setError('');
     try {
-      const token = await firebaseUser.getIdToken();
       const response = await fetch('/api/invites', {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'send', gameId, friendId: friend.id }),
       });
       const result = await response.json();

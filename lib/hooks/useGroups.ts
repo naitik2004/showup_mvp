@@ -70,7 +70,7 @@ export function useGroups(
         // from the groups table, never to fabricated matches.
         const { data: directData, error: directError } = await supabase
           .from('game_groups')
-          .select('*, host:users(name)')
+          .select('*, host:profiles(name)')
           .limit(25);
 
         if (directError) {

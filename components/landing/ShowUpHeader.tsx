@@ -8,23 +8,22 @@ import { createClient } from '@/lib/supabase/client';
 
 export default function ShowUpHeader() {
   const pathname = usePathname();
-  const { sessionUser, firebaseUser } = useAuth();
+  const { sessionUser } = useAuth();
   const supabase = useMemo(() => createClient(), []);
   const [requestCount, setRequestCount] = useState(0);
   const [inviteCount, setInviteCount] = useState(0);
 
   useEffect(() => {
-    if (!sessionUser?.id || !firebaseUser) {
+    if (!sessionUser?.id) {
       setRequestCount(0);
       setInviteCount(0);
       return;
     }
     let active = true;
     void (async () => {
-      const token = await firebaseUser.getIdToken();
       const [friendships, invites] = await Promise.all([
         supabase.from('friendships').select('id', { count: 'exact', head: true }).eq('user_b', sessionUser.id).eq('status', 'pending'),
-        fetch('/api/invites', { headers: { Authorization: `Bearer ${token}` } }).then((response) => response.ok ? response.json() : { count: 0 }),
+        fetch('/api/invites').then((response) => response.ok ? response.json() : { count: 0 }),
       ]);
       if (!active) return;
       setRequestCount(friendships.count || 0);
@@ -35,7 +34,7 @@ export default function ShowUpHeader() {
       setInviteCount(0);
     });
     return () => { active = false; };
-  }, [sessionUser?.id, firebaseUser, supabase]);
+  }, [sessionUser?.id, supabase]);
 
   const active = (href: string) => href === '/' ? pathname === '/' : pathname.startsWith(href);
   const hostHref = sessionUser ? '/groups/create' : '/login';

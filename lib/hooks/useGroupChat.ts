@@ -19,7 +19,7 @@ export function useGroupChat(groupId: string) {
         .select(
           `
           *,
-          sender:users(
+          sender:profiles(
             id,
             name
           )
@@ -50,7 +50,7 @@ export function useGroupChat(groupId: string) {
             .select(
               `
               *,
-              sender:users(
+              sender:profiles(
                 id,
                 name
               )

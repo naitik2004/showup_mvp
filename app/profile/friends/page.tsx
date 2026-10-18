@@ -23,7 +23,7 @@ export default function FriendsPage() {
     if (relationshipError) { setError(relationshipError.message); setLoading(false); return; }
     const ids = (relationships || []).map((item) => item.user_a === sessionUser.id ? item.user_b : item.user_a);
     if (!ids.length) { setFriends([]); setLoading(false); return; }
-    const { data, error: profileError } = await supabase.from('users').select('id,name,city,preferred_sports').in('id', ids);
+    const { data, error: profileError } = await supabase.from('profiles').select('id,name,city,preferred_sports').in('id', ids);
     if (profileError) setError(profileError.message);
     else setFriends((data || []) as Friend[]);
     setLoading(false);

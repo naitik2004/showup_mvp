@@ -27,19 +27,18 @@ const when = (value: string) => {
 
 export default function InvitesPage() {
   const router = useRouter();
-  const { sessionUser, firebaseUser, loading: authLoading } = useAuth();
+  const { sessionUser, loading: authLoading } = useAuth();
   const [invites, setInvites] = useState<Invite[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [busyId, setBusyId] = useState('');
 
   const loadInvites = useCallback(async () => {
-    if (!firebaseUser) return;
+    if (!sessionUser) return;
     setLoading(true);
     setError('');
     try {
-      const token = await firebaseUser.getIdToken();
-      const response = await fetch('/api/invites', { headers: { Authorization: `Bearer ${token}` } });
+      const response = await fetch('/api/invites');
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'Invites could not be loaded.');
       setInvites(result.invites || []);
@@ -48,7 +47,7 @@ export default function InvitesPage() {
     } finally {
       setLoading(false);
     }
-  }, [firebaseUser]);
+  }, [sessionUser?.id]);
 
   useEffect(() => {
     if (!authLoading && !sessionUser) router.replace('/login');
@@ -56,13 +55,12 @@ export default function InvitesPage() {
   useEffect(() => { if (sessionUser) void loadInvites(); }, [sessionUser, loadInvites]);
 
   const respond = async (invite: Invite, action: 'accept' | 'decline') => {
-    if (!firebaseUser) { router.push('/login'); return; }
+    if (!sessionUser) { router.push('/login'); return; }
     setBusyId(invite.id);
     try {
-      const token = await firebaseUser.getIdToken();
       const response = await fetch('/api/invites', {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action, inviteId: invite.id }),
       });
       const result = await response.json();
