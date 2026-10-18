@@ -1,18 +1,8 @@
 import type { Metadata } from 'next';
-import { Space_Grotesk, Inter } from 'next/font/google';
 import './globals.css';
+import './showup-reference.css';
 import { Toaster } from '@/components/ui/sonner';
-import { cn } from '@/lib/utils';
-
-const inter = Inter({
-  subsets: ['latin'],
-  variable: '--font-sans',
-});
-
-const spaceGrotesk = Space_Grotesk({
-  subsets: ['latin'],
-  variable: '--font-heading',
-});
+import ShowUpHeader from '@/components/landing/ShowUpHeader';
 
 export const metadata: Metadata = {
   title: 'ShowUp — Sports Social Platform',
@@ -26,8 +16,14 @@ export default function RootLayout({
     children: React.ReactNode;
   }>) {
   return (
-    <html lang="en" className={cn('dark', inter.variable, spaceGrotesk.variable)}>
-      <body className="antialiased bg-background text-foreground min-h-screen">
+    <html lang="en">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=DM+Mono:wght@400;500&family=Instrument+Serif:ital@1&display=swap" rel="stylesheet" />
+      </head>
+      <body className="antialiased min-h-screen">
+        <ShowUpHeader />
         {children}
         <Toaster theme="dark" position="top-center" closeButton richColors />
       </body>

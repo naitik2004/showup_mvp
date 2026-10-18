@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { GameGroup } from '@/types';
 
@@ -13,7 +13,7 @@ interface RealtimeParams {
 }
 
 export function useRealtime({ onInsert, onUpdate, onDelete, onMemberChange}: RealtimeParams) {
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   useEffect(() => {
     const channel = supabase
