@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { FormEvent, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/hooks/useAuth';
+import LoadingScreen from '@/components/loading/LoadingScreen';
 
 function readableAuthError(message: string) {
   const value = message.toLowerCase();
@@ -56,6 +57,7 @@ export default function LoginPage() {
 
   return (
     <main className="wrap" id="app">
+      {submitting && tab === 'in' && <LoadingScreen />}
       <div className="au">
         <section className="auv"><span className="lb" style={{ color: '#f3efe4aa' }}>Why sign in</span><h2>Your court,<br />your crew.</h2><ul><li>Join matches and hold your spot</li><li>Chat with your group before kickoff</li><li>Build a friends list you can invite</li><li>Get reviewed and earn a reputation</li></ul></section>
         <form className="card fm" aria-label="Sign in or create account" onSubmit={(event) => void submit(event)} noValidate>

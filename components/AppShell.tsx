@@ -3,7 +3,6 @@
 import { ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import ShowUpHeader from "@/components/landing/ShowUpHeader";
-import RequestLoader from '@/components/loading/RequestLoader';
 
 /** Marketing renders independently from authenticated application providers. */
 export default function AppShell({ children }: { children: ReactNode }) {
@@ -12,7 +11,6 @@ export default function AppShell({ children }: { children: ReactNode }) {
   return (
     <>
       <ShowUpHeader />
-      <RequestLoader />
       {children}
     </>
   );
