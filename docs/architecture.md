@@ -1,5 +1,14 @@
 # ShowUp architecture and migration
 
+## Player identity plan
+
+The cross-feature requirements, migration audit, privacy boundaries and acceptance
+tests are recorded in [the player identifiers plan](plans/player-identifiers.md).
+Migrations 019/020 are applied to the hosted database and the matching React
+integrations are verified locally against it. A matching frontend release is
+required for the deployed website. See `supabase/APPLY.md`
+for the inspection, backup, ordered application and verification steps.
+
 ## Current routes
 
 - `/`: native Next.js marketing page, composed by `app/page.tsx`.

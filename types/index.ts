@@ -35,6 +35,7 @@ export const CITIES = [
 export type City = typeof CITIES[number];
 
 export interface User {
+  player_id?: string;
   id: string;
   name: string;
   city: City | string;

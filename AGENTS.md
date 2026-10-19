@@ -3,6 +3,10 @@
 ShowUp is a sports startup. Use the product specification for intended behavior
 and supplied HTML/screenshots as visual references, not production architecture.
 
+Player identity work across all features must follow
+`docs/plans/player-identifiers.md`: UUIDs are internal relationship keys;
+immutable public player IDs are for display and server-resolved discovery.
+
 - Implement new UI as named React/TypeScript components with clear responsibilities.
 - Keep page composition, reusable UI, styles, content, hooks, and data access separate.
 - Use descriptive identifiers and readable formatting. Do not paste complete HTML

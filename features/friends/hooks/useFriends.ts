@@ -98,7 +98,7 @@ export function useFriends() {
     setBusy(player.id);
     setError("");
     try {
-      await changeFriendship(player.id, action);
+      await changeFriendship(player.player_id, action);
       notifyNavigationChanged();
       if (afterSave) await afterSave();
       toast.success(actionMessages[action]);

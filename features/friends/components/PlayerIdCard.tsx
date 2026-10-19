@@ -26,6 +26,7 @@ export default function PlayerIdCard({ playerId }: { playerId: string }) {
         <button className="btn hot sm" onClick={() => void copy()}>
           Copy my ID
         </button>
+        <a className="btn gh sm" href={`/#/p/${playerId}`}>Public profile ↗</a>
       </div>
     </aside>
   );

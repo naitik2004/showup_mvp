@@ -494,6 +494,8 @@ export type Database = {
       }
       profiles: {
         Row: {
+          player_id: string
+          legacy_id: string | null
           avatar_url: string | null
           city: string
           created_at: string | null
@@ -506,6 +508,8 @@ export type Database = {
           preferred_sports: string[] | null
         }
         Insert: {
+          player_id?: never
+          legacy_id?: never
           avatar_url?: string | null
           city?: string
           created_at?: string | null
@@ -518,6 +522,8 @@ export type Database = {
           preferred_sports?: string[] | null
         }
         Update: {
+          player_id?: never
+          legacy_id?: never
           avatar_url?: string | null
           city?: string
           created_at?: string | null

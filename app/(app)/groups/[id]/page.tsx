@@ -8,6 +8,9 @@ import { GameGroup, GroupMember, Message, SPORTS, User } from '@/types';
 import { toast } from 'sonner';
 import { useAuth } from '@/lib/hooks/useAuth';
 import InviteFriendsDialog from '@/components/groups/InviteFriendsDialog';
+import PlayerName from '@/features/players/components/PlayerName';
+import { matchProfiles } from '@/features/players/data/playersRepository';
+import { RelatedPlayer } from '@/features/players/types';
 import { Match, toGroup } from '@/lib/matches';
 
 export default function GroupDetailPage() {
@@ -16,6 +19,7 @@ export default function GroupDetailPage() {
   const supabase = useMemo(() => createClient(), []);
   const { sessionUser, user, loading: authLoading } = useAuth();
   const groupId = params.id as string;
+  const currentUserId = sessionUser?.id || '';
   const [group, setGroup] = useState<GameGroup | null>(null);
   const [members, setMembers] = useState<GroupMember[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -24,6 +28,8 @@ export default function GroupDetailPage() {
   const [chatMessage, setChatMessage] = useState('');
   const [inviteToken, setInviteToken] = useState('');
   const [busy, setBusy] = useState(false);
+  const profileCache = useRef(new Map<string, RelatedPlayer>());
+  const roomGeneration = useRef(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -31,6 +37,7 @@ export default function GroupDetailPage() {
   }, []);
 
   const loadRoom = useCallback(async () => {
+    const generation = ++roomGeneration.current;
     const { data: groupData, error: groupError } = await supabase
       .from('games_with_counts').select('*').eq('id', groupId).maybeSingle();
     if (groupError || !groupData) {
@@ -39,10 +46,7 @@ export default function GroupDetailPage() {
       return;
     }
 
-    const [{ data: host }, { data: memberRows, error: memberError }] = await Promise.all([
-      supabase.from('profiles').select('*').eq('id', groupData.host_id).maybeSingle(),
-      supabase.from('game_members').select('*').eq('game_id', groupId).order('joined_at'),
-    ]);
+    const { data: memberRows, error: memberError } = await supabase.from('game_members').select('*').eq('game_id', groupId).order('joined_at');
     if (memberError) {
       setLoadError(memberError.message);
       setLoading(false);
@@ -50,18 +54,17 @@ export default function GroupDetailPage() {
     }
 
     const accepted = (memberRows || []).map(row => ({ ...row, id: `${row.game_id}:${row.user_id}`, group_id: row.game_id, status: 'accepted' })) as GroupMember[];
-    const profileIds = Array.from(new Set([groupData.host_id, ...accepted.map((member) => member.user_id)]));
-    const { data: profiles } = profileIds.length
-      ? await supabase.from('profiles').select('*').in('id', profileIds)
-      : { data: [] as User[] };
-    const profileById = new Map((profiles || []).map((profile) => [profile.id, profile as User]));
+    // Authorize one batch for the room, then share this cache across lobby/chat.
+    const profileById = await matchProfiles(groupId);
+    if (generation !== roomGeneration.current) return;
+    profileCache.current = profileById;
     setGroup({
       ...toGroup(groupData as Match),
-      host: (host as User | null) || profileById.get(groupData.host_id),
-      host_name: host?.name || 'Player',
+      host: profileById.get(groupData.host_id) as unknown as User,
+      host_name: profileById.get(groupData.host_id)?.name || groupData.host_name || 'Player',
       member_count: accepted.length,
     } as unknown as GameGroup);
-    setMembers(accepted.map((member) => ({ ...member, user: profileById.get(member.user_id) })));
+    setMembers(accepted.map((member) => ({ ...member, user: profileById.get(member.user_id) as unknown as User })));
 
     const userIsMember = !!sessionUser?.id && accepted.some((member) => member.user_id === sessionUser.id);
     if (userIsMember) {
@@ -69,12 +72,8 @@ export default function GroupDetailPage() {
         .from('messages').select('*').eq('game_id', groupId).order('created_at', { ascending: false }).limit(50);
       if (messageError) { setLoadError(messageError.message); setLoading(false); return; }
       if (messageRows) {
-        const senderIds = Array.from(new Set(messageRows.map((message) => message.sender_id)));
-        const { data: senders } = senderIds.length
-          ? await supabase.from('profiles').select('*').in('id', senderIds)
-          : { data: [] as User[] };
-        const sendersById = new Map((senders || []).map((profile) => [profile.id, profile as User]));
-        setMessages(messageRows.reverse().map((message) => ({ ...message, group_id: message.game_id, content: message.body, sender: sendersById.get(message.sender_id) })) as Message[]);
+        const sendersById = profileCache.current;
+        setMessages(messageRows.reverse().map((message) => ({ ...message, group_id: message.game_id, content: message.body, sender: sendersById.get(message.sender_id) as unknown as User })) as Message[]);
       }
     } else {
       setMessages([]);
@@ -85,13 +84,19 @@ export default function GroupDetailPage() {
 
   useEffect(() => {
     if (authLoading) return;
-    if (!sessionUser) {
+    if (!currentUserId) {
       const requestedPath = `/groups/${groupId}${inviteToken ? `?invite=${encodeURIComponent(inviteToken)}` : ''}`;
       router.replace(`/login?next=${encodeURIComponent(requestedPath)}`);
       return;
     }
     let active = true;
-    const refresh = async () => { if (active) await loadRoom(); };
+    const refresh = async () => {
+      if (!active) return;
+      try { await loadRoom(); }
+      catch (cause) { if (active) { setLoadError((cause as Error).message); setLoading(false); } }
+    };
+    const invalidate = () => { profileCache.current.clear(); setMembers([]); setMessages([]); void refresh(); };
+    profileCache.current.clear();
     void refresh();
     const channel = supabase.channel(`game:${groupId}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `game_id=eq.${groupId}` }, payload => {
@@ -101,18 +106,19 @@ export default function GroupDetailPage() {
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'games', filter: `id=eq.${groupId}` }, () => void refresh())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'game_members' }, () => void refresh())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'player_visibility_events' }, invalidate)
       .subscribe(status => { if (status === 'SUBSCRIBED') void refresh(); });
     const reconnect = () => void refresh();
     window.addEventListener('online', reconnect);
     window.addEventListener('focus', reconnect);
-    return () => { active = false; void supabase.removeChannel(channel); window.removeEventListener('online', reconnect); window.removeEventListener('focus', reconnect); };
-  }, [authLoading, groupId, inviteToken, loadRoom, router, sessionUser]);
+    window.addEventListener('showup:profiles-changed', invalidate);
+    return () => { active = false; roomGeneration.current++; profileCache.current.clear(); window.removeEventListener('showup:profiles-changed', invalidate); void supabase.removeChannel(channel); window.removeEventListener('online', reconnect); window.removeEventListener('focus', reconnect); };
+  }, [authLoading, currentUserId, groupId, inviteToken, loadRoom, router]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: messages.length > 1 ? 'smooth' : 'auto' });
   }, [messages]);
 
-  const currentUserId = sessionUser?.id || '';
   const isHost = !!group && currentUserId === group.host_id;
   const isMember = members.some((member) => member.user_id === currentUserId);
   const displayStatus = group?.status === 'in_progress' ? 'live' : group?.status === 'expired' ? 'done' : group?.status === 'open' && members.length >= (group.max_players || 0) ? 'full' : group?.status || 'open';
@@ -147,7 +153,7 @@ export default function GroupDetailPage() {
     const optimisticId = crypto.randomUUID();
     setMessages(previous => [...previous, { id: optimisticId, group_id: groupId, sender_id: currentUserId, content, created_at: new Date().toISOString(), expires_at: null }]);
     setChatMessage('');
-    const { error } = await supabase.from('messages').insert({ id: optimisticId, game_id: groupId, sender_id: currentUserId, body: content });
+    const { error } = await supabase.rpc('send_match_message', { p_message_id: optimisticId, p_game_id: groupId, p_body: content });
     if (error) { setMessages(previous => previous.filter(message => message.id !== optimisticId)); setChatMessage(content); }
     setBusy(false);
     if (error) { toast.error(error.message); return; }
@@ -160,6 +166,17 @@ export default function GroupDetailPage() {
     if (error) { toast.error(error.message); return; }
     toast.success(status === 'live' ? 'Match started.' : status === 'cancelled' ? 'Match cancelled.' : 'Match ended.');
     await loadRoom();
+  };
+
+  const kickPlayer = async (code: string) => {
+    setBusy(true);
+    try {
+      const { data, error } = await supabase.rpc('kick_player_by_code', { p_game_id: groupId, p_player_code: code });
+      if (error) throw error;
+      if (!data?.ok) throw new Error(data?.message || 'Could not remove player.');
+      toast.success('Player removed.'); await loadRoom();
+    } catch (cause) { toast.error((cause as Error).message); }
+    finally { setBusy(false); }
   };
 
   const leaveMatch = async () => {
@@ -196,12 +213,12 @@ export default function GroupDetailPage() {
       </div>
       <div className="mg2">
         <section className="card"><h3>Players</h3>
-          {members.map((member) => <div className="mem" key={member.id}><i className="av">{(member.user?.name || 'P').charAt(0).toUpperCase()}</i><div><b>{member.user?.name || 'Player'}</b><br /><small>{member.user?.city || 'India'}</small></div>{member.user_id === group.host_id && <span className="tag h">Host</span>}</div>)}
+          {members.map((member) => <div className="mem" key={member.id}><i className="av">{(member.user?.name || 'P').charAt(0).toUpperCase()}</i><div><b><PlayerName name={member.user?.name || 'Unavailable player'} code={member.user?.player_id} /></b>{isHost && member.user?.player_id && <p className="mono">{member.user.player_id}</p>}<br /><small>{member.user?.city || 'India'}</small></div>{member.user_id === group.host_id && <span className="tag h">Host</span>}{isHost && member.user_id !== currentUserId && member.user?.player_id && ['open','full'].includes(group.status) && <button className="btn sm bad" disabled={busy} onClick={() => void kickPlayer(member.user!.player_id!)}>Remove</button>}</div>)}
           {!members.length && <p className="sy">No players have joined yet.</p>}
         </section>
         <section className="card cht"><div className="chh"><h3 style={{ margin: 0 }}>Group chat</h3>{isMember && <span className="mono">● {members.length} in room</span>}</div>
           {isMember ? <>
-            <div className="msgs">{messages.length ? messages.map((message) => <div className={`mg ${message.sender_id === currentUserId ? 'me' : ''}`} key={message.id}><small>{message.sender_id === currentUserId ? 'You' : message.sender?.name || 'Player'}, {new Date(message.created_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</small><p>{message.content}</p></div>) : <p className="sy">Match created. Share the plan here.</p>}<div ref={messagesEndRef} /></div>
+            <div className="msgs">{messages.length ? messages.map((message) => <div className={`mg ${message.sender_id === currentUserId ? 'me' : ''}`} key={message.id}><small><PlayerName name={message.sender_id === currentUserId ? user?.name || 'You' : message.sender?.name || 'Unavailable player'} code={message.sender_id === currentUserId ? user?.player_id : message.sender?.player_id} />, {new Date(message.created_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</small><p>{message.content}</p></div>) : <p className="sy">Match created. Share the plan here.</p>}<div ref={messagesEndRef} /></div>
             <form id="cf" onSubmit={(event) => void sendMessage(event)}><input value={chatMessage} onChange={(event) => setChatMessage(event.target.value)} placeholder="Message the group" aria-label="Message the group" maxLength={1000} /><button className="btn" type="submit" disabled={busy || !chatMessage.trim()}>Send</button></form>
           </> : <p className="sy lock">Only players in this match can read and send messages.<br />{sessionUser ? 'Join to unlock the chat.' : <><Link href={`/login?next=${encodeURIComponent(`/groups/${groupId}${inviteToken ? `?invite=${inviteToken}` : ''}`)}`}><u>Sign in</u></Link> to join.</>}</p>}
         </section>

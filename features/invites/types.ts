@@ -12,5 +12,5 @@ export interface MatchInvite extends InviteRow {
     skill_level: string;
     status: string;
   } | null;
-  sender: { name: string; city: string } | null;
+  sender: { name: string; city: string | null; player_id: string } | null;
 }

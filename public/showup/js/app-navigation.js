@@ -10,6 +10,10 @@
   };
 
   window.showupNavigateLegacyRoute = (section) => {
+    if (section === 'p') {
+      window.location.replace('/' + window.location.hash);
+      return true;
+    }
     if (!Object.prototype.hasOwnProperty.call(pages, section)) return false;
     window.location.replace(pages[section]);
     return true;

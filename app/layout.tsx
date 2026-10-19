@@ -28,8 +28,8 @@ export default function RootLayout({
       <body className="antialiased min-h-screen">
         <AppShell>
           {children}
-          <AppToaster />
         </AppShell>
+        <AppToaster />
       </body>
     </html>
   );

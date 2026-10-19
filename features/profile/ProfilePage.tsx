@@ -1,4 +1,5 @@
 "use client";
+import ProfilePrivacy from './components/ProfilePrivacy';
 import Link from "next/link";
 import { toast } from "sonner";
 import { APP_ROUTES } from "@/lib/navigation";
@@ -31,6 +32,7 @@ export default function ProfilePage() {
           onRetry={profile.refresh}
         />
         <ProfileSportsSection sports={profile.user?.preferred_sports || []} />
+        <ProfilePrivacy />
         <div className="acts">
           <button
             className="btn gh"
