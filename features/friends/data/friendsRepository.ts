@@ -11,7 +11,7 @@ const database = () => createClient();
 export function friendsError(cause: unknown): string {
   const error = cause as { code?: string; message?: string };
   if (["PGRST202", "42703", "42883"].includes(error?.code || "")) {
-    return "Friends is waiting for its database update. Apply migration 017, then retry.";
+    return "Friends is waiting for its database update. Apply migration 019, then retry.";
   }
   return error?.message || "Could not reach your network. Please try again.";
 }
@@ -25,26 +25,7 @@ export async function fetchPlayers(
     p_query: query,
   });
   if (error) throw error;
-  const players: Player[] = data || [];
-  if (!players.length) return [];
-  const { data: profiles, error: profileError } = await database()
-    .from("profiles")
-    .select("id,preferred_sports")
-    .in(
-      "id",
-      players.map((player) => player.id),
-    );
-  if (profileError) throw profileError;
-  const sports = new Map(
-    (profiles || []).map((profile) => [
-      profile.id,
-      profile.preferred_sports || [],
-    ]),
-  );
-  return players.map((player) => ({
-    ...player,
-    preferred_sports: sports.get(player.id) || [],
-  }));
+  return data || [];
 }
 
 export async function fetchFriendsSnapshot(): Promise<FriendsSnapshot> {
@@ -66,9 +47,10 @@ export async function fetchFriendsSnapshot(): Promise<FriendsSnapshot> {
 }
 
 export async function changeFriendship(playerId: string, action: FriendAction) {
-  const { error } = await database().rpc("friend_action", {
-    p_player_id: playerId,
+  const { data, error } = await database().rpc("friend_action_by_code", {
+    p_player_code: playerId,
     p_action: action,
   });
   if (error) throw error;
+  if (!data?.ok) throw new Error(data?.message || "Could not update friendship.");
 }

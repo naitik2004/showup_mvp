@@ -1,3 +1,4 @@
+import PlayerName from '@/features/players/components/PlayerName';
 import { SPORTS } from "@/types";
 import { MatchInvite } from "../types";
 import styles from "../invites.module.css";
@@ -18,7 +19,7 @@ export default function InviteCard({
       </i>
       <div>
         <b>
-          {invite.sender?.name || "A player"} invited you to{" "}
+          <PlayerName name={invite.sender?.name || "A player"} code={invite.sender?.player_id} /> invited you to{" "}
           {sport?.name || "a match"}
         </b>
         <br />

@@ -1,0 +1,29 @@
+.identity {
+  position: relative;
+  display: inline-block;
+}
+.name {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: inherit;
+  cursor: pointer;
+}
+.code {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 5;
+  white-space: nowrap;
+  padding: 7px 10px;
+  background: #f3efe4;
+  color: #15130f;
+  border: 1px solid #15130f;
+  border-radius: 8px;
+}
+.identity[data-open='true'] .code {
+  display: block;
+}

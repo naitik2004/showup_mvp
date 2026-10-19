@@ -1,4 +1,5 @@
 "use client";
+import AddFriendById from './components/AddFriendById';
 import { useState } from "react";
 import { useFriends } from "./hooks/useFriends";
 import FriendsHero from "./components/FriendsHero";
@@ -46,6 +47,8 @@ export default function FriendsPage() {
         )}
         {!friends.loading && (
           <div className={styles["fr-top"]}>
+            <div style={{ display: "grid", gap: 16 }}>
+            <AddFriendById onAdded={friends.refresh} />
             <PlayerSearchSection
               query={friends.query}
               onQueryChange={friends.setQuery}
@@ -54,6 +57,7 @@ export default function FriendsPage() {
               error={friends.searchError}
               {...actions}
             />
+            </div>
             {data && <PlayerIdCard playerId={data.playerId} />}
           </div>
         )}

@@ -1,3 +1,4 @@
+import { relatedProfiles } from '@/features/players/data/playersRepository';
 import { createClient } from "@/lib/supabase/client";
 import { InviteRow, MatchInvite } from "../types";
 export async function fetchInvites(userId: string): Promise<MatchInvite[]> {
@@ -20,13 +21,11 @@ export async function fetchInvites(userId: string): Promise<MatchInvite[]> {
       .from("games")
       .select("id,sport,venue,starts_at,skill_level,status")
       .in("id", gameIds),
-    client.from("profiles").select("id,name,city").in("id", senderIds),
+    relatedProfiles(senderIds),
   ]);
-  if (games.error || senders.error) throw games.error || senders.error;
+  if (games.error) throw games.error;
   const gamesById = new Map((games.data || []).map((game) => [game.id, game]));
-  const sendersById = new Map(
-    (senders.data || []).map((sender) => [sender.id, sender]),
-  );
+  const sendersById = senders;
   return invites.map((invite) => ({
     ...invite,
     game: gamesById.get(invite.game_id) || null,

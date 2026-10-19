@@ -1,3 +1,4 @@
+import PlayerCode from '@/features/players/components/PlayerCode';
 import { User } from "@/types";
 export default function ProfileIdentity({ user }: { user: User | null }) {
   return (
@@ -7,6 +8,9 @@ export default function ProfileIdentity({ user }: { user: User | null }) {
       </i>
       <div>
         <h2>{user?.name || "Your profile"}</h2>
+        <PlayerCode code={user?.player_id} />
+        {user?.player_id && <a className="mono" style={{ marginLeft: 10 }} href={`/#/p/${user.player_id}`}>Public profile ↗</a>}
+        <br />
         <span className="mono">
           {user?.city || "ShowUp"}
           {user?.created_at

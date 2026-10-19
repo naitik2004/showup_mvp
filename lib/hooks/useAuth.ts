@@ -15,7 +15,7 @@ export function useAuth() {
   const [loading, setLoading] = useState(true);
 
   const loadProfile = useCallback(async (userId: string) => {
-    const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle();
+    const { data, error } = await supabase.from('profiles').select('id,name,city,avatar_url,preferred_sports,onboarded,created_at,player_id').eq('id', userId).maybeSingle();
     if (error) throw error;
     setUser(data as User | null);
     return data as User | null;
@@ -96,7 +96,7 @@ export function useAuth() {
     if (authError || !authUser) return { data: null, error: authError || new Error('Not authenticated') };
     const { data, error } = await supabase.from('profiles').update({
       name, city, preferred_sports: preferredSports, onboarded: true,
-    }).eq('id', authUser.id).select('*').single();
+    }).eq('id', authUser.id).select('id,name,city,avatar_url,preferred_sports,onboarded,created_at,player_id').single();
     if (error) { toast.error(error.message); return { data: null, error }; }
     setUser(data as User);
     toast.success('Profile updated.');
