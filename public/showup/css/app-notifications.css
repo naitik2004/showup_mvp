@@ -1,0 +1,24 @@
+/* The notification surface keeps its original compact shape while idle. */
+.showup-notification-idle,
+#toast:not(.on) {
+  position: fixed;
+  left: 50%;
+  bottom: max(34px, env(safe-area-inset-bottom, 0px));
+  z-index: 99;
+  width: 43px;
+  height: 25px;
+  padding: 0;
+  border-radius: 14px;
+  background: #15130f;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+body:has([data-sonner-toast]:not([data-removed="true"])) .showup-notification-idle {
+  visibility: hidden;
+}
+@media (max-width: 760px) {
+  .showup-notification-idle,
+  #toast:not(.on) {
+    bottom: max(74px, calc(env(safe-area-inset-bottom, 0px) + 62px));
+  }
+}

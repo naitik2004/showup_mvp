@@ -1,0 +1,19 @@
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 13px 22px;
+  border: 1px solid #ffffff14;
+  border-radius: 14px;
+  background: #15130f;
+  color: #f3efe4;
+  font: 500 13px/1.5 var(--mono);
+  box-shadow: 0 8px 24px #15130f26;
+  overflow-wrap: anywhere;
+}
+.content { flex: 1; }
+.description { color: #f3efe4c4; }
+@media (prefers-reduced-motion: reduce) {
+  .toast { animation: none !important; transition: none !important; }
+}

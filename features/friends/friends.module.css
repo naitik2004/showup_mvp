@@ -1,0 +1,759 @@
+/* ShowUp / FRIENDS section styles. Root: .fr. Blocks: fr-hero fr-stats fr-search fr-id fr-sec fr-grid fr-card fr-list fr-person fr-pid fr-tag fr-why fr-stack fr-filter fr-empty */
+.fr {
+  display: grid;
+  gap: clamp(56px, 7vw, 100px);
+}
+/* hero */
+.fr-hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 28px;
+  flex-wrap: wrap;
+}
+.fr-hero__title {
+  font-size: clamp(60px, 12vw, 176px);
+  margin: 12px 0 0;
+}
+.fr-hero__lede {
+  max-width: 30ch;
+  font-size: clamp(22px, 2.4vw, 32px);
+  line-height: 1.1;
+  margin-top: 16px;
+}
+.fr-stats {
+  display: flex;
+  gap: 12px;
+}
+.fr-stat {
+  display: grid;
+  gap: 8px;
+  min-width: 112px;
+  padding: 16px 18px;
+  border: 2px solid var(--ink);
+  border-radius: 20px;
+}
+.fr-stat:nth-child(1) {
+  background: var(--ball);
+}
+.fr-stat:nth-child(2) {
+  background: var(--clay);
+  color: var(--chalk);
+}
+.fr-stat:nth-child(3) {
+  background: var(--court);
+  color: var(--chalk);
+}
+.fr-stat__n {
+  font: 900 clamp(34px, 4vw, 56px) / 0.9 var(--sans);
+  font-stretch: 125%;
+  letter-spacing: -0.04em;
+}
+.fr-stat__l {
+  font: 500 11px var(--mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+/* search + my id */
+.fr-top {
+  display: grid;
+  grid-template-columns: 1.55fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+.fr-search {
+  background: var(--card);
+  border: 2px solid var(--ink);
+  border-radius: 28px;
+  padding: clamp(20px, 3vw, 36px);
+}
+.fr-search__label {
+  font: 500 12px var(--mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--mute);
+}
+.fr-search__box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+  padding: 6px 8px 6px 20px;
+  border: 2px solid var(--ink);
+  border-radius: 99px;
+  background: var(--chalk);
+  transition: box-shadow 0.2s;
+}
+.fr-search__box:focus-within {
+  box-shadow: 6px 6px 0 var(--ball);
+}
+.fr-search__icon {
+  width: 24px;
+  height: 24px;
+  flex: none;
+}
+.fr-search__input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: none;
+  outline: 0;
+  padding: 12px 0;
+  font: 700 clamp(17px, 2vw, 22px) var(--sans);
+}
+.fr-search__clear {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  border-radius: 50%;
+  border: 2px solid var(--ink);
+  background: none;
+  font-size: 22px;
+  line-height: 1;
+  visibility: hidden;
+}
+.fr-search__box.has-q .fr-search__clear {
+  visibility: visible;
+}
+.fr-search__clear:hover {
+  background: var(--ink);
+  color: var(--chalk);
+}
+.fr-results {
+  display: grid;
+  gap: 12px;
+  margin-top: 22px;
+}
+.fr-tip {
+  color: var(--mute);
+}
+.fr-tip .chip {
+  margin: 0 4px;
+  padding: 4px 12px;
+  font-size: 13px;
+}
+.fr-count {
+  font: 500 12px var(--mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--mute);
+}
+.fr-id {
+  position: relative;
+  display: grid;
+  gap: 14px;
+  overflow: hidden;
+  background: var(--court);
+  color: var(--chalk);
+  border-radius: 28px;
+  padding: clamp(22px, 3vw, 36px);
+}
+.fr-id::after {
+  content: "";
+  position: absolute;
+  right: -46px;
+  top: -46px;
+  width: 170px;
+  height: 170px;
+  border-radius: 50%;
+  background: var(--ball);
+  opacity: 0.14;
+}
+.fr-id__label {
+  font: 500 12px var(--mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #f3efe4aa;
+}
+.fr-id__code {
+  font: 500 clamp(30px, 3.6vw, 50px) / 1 var(--mono);
+  letter-spacing: 0.04em;
+  color: var(--ball);
+  word-break: break-all;
+}
+.fr-id__hint {
+  max-width: 32ch;
+  color: #f3efe4cc;
+}
+.fr-id__row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+/* sections */
+.fr-sec:empty {
+  display: none;
+}
+.fr-sec__head {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 26px;
+}
+.fr-sec__title {
+  font-size: clamp(36px, 5.4vw, 72px);
+}
+.fr-sec__sub {
+  max-width: 56ch;
+  color: var(--mute);
+}
+.fr-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+/* suggestion cards */
+.fr-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+  gap: 16px;
+}
+.fr-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 24px;
+  border: 2px solid var(--ink);
+  border-radius: 26px;
+  background: var(--card);
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
+}
+.fr-card:hover {
+  transform: translate(-4px, -4px);
+  box-shadow: 8px 8px 0 var(--ink);
+}
+.fr-card .av {
+  width: 68px;
+  height: 68px;
+  font-size: 30px;
+}
+.fr-card__x {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  border: 0;
+  background: none;
+  font-size: 26px;
+  line-height: 1;
+  opacity: 0.4;
+}
+.fr-card__x:hover {
+  opacity: 1;
+}
+.fr-card__name {
+  font: 900 22px/1.05 var(--sans);
+  font-stretch: 112%;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+}
+.fr-card__name:hover {
+  text-decoration: underline;
+}
+.fr-card__sub {
+  color: var(--mute);
+  font-size: 14px;
+}
+.fr-card__act {
+  margin-top: auto;
+  padding-top: 10px;
+}
+/* person rows (search results, requests, crew) */
+.fr-list {
+  display: grid;
+  gap: 12px;
+}
+.fr-list--2 {
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+}
+.fr-person {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border: 2px solid var(--ink);
+  border-radius: 20px;
+  background: var(--card);
+  transition:
+    transform 0.15s,
+    box-shadow 0.15s;
+}
+.fr-person:hover {
+  transform: translate(-3px, -3px);
+  box-shadow: 5px 5px 0 var(--ink);
+}
+.fr-person .av {
+  width: 48px;
+  height: 48px;
+  font-size: 20px;
+}
+.fr-person__main {
+  flex: 1;
+  min-width: 0;
+}
+.fr-person__name {
+  font-weight: 800;
+  font-size: 17px;
+}
+.fr-person__name:hover {
+  text-decoration: underline;
+}
+.fr-person__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  margin-top: 2px;
+  font-size: 13px;
+  color: var(--mute);
+}
+.fr-person__act {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.fr-person--req {
+  background: var(--ball);
+}
+.fr-person--sent {
+  background: transparent;
+  border-style: dashed;
+}
+/* small parts */
+.fr-pid {
+  font: 500 11px var(--mono);
+  letter-spacing: 0.08em;
+  padding: 3px 9px;
+  border: 1.5px solid var(--ink);
+  border-radius: 99px;
+  background: var(--chalk);
+  cursor: copy;
+}
+.fr-pid:hover {
+  background: var(--ball);
+}
+.fr-tag {
+  display: inline-block;
+  font: 500 11px var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 99px;
+  background: var(--paper);
+}
+.fr-tag--ok {
+  background: var(--court);
+  color: var(--ball);
+}
+.fr-tag--hit {
+  background: var(--ink);
+  color: var(--ball);
+}
+.fr-why {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+.fr-why__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 99px;
+  background: var(--paper);
+  font-size: 12px;
+  font-weight: 600;
+}
+.fr-why__chip--played {
+  background: var(--ball);
+}
+.fr-why__chip--mutual {
+  background: #d9532b26;
+}
+.fr-stack {
+  display: inline-flex;
+}
+.fr-stack .av {
+  width: 20px;
+  height: 20px;
+  margin-left: -6px;
+  border-width: 1.5px;
+  font-size: 10px;
+}
+.fr-stack .av:first-child {
+  margin-left: 0;
+}
+.fr-empty {
+  padding: 34px;
+  border: 2px dashed var(--ink);
+  border-radius: 24px;
+  text-align: center;
+}
+.fr-empty h3 {
+  font-size: 26px;
+  margin-bottom: 8px;
+}
+@media (max-width: 900px) {
+  .fr-top {
+    grid-template-columns: 1fr;
+  }
+  .fr-stats {
+    width: 100%;
+  }
+  .fr-stat {
+    flex: 1;
+    min-width: 0;
+  }
+}
+@media (max-width: 560px) {
+  .fr-person {
+    flex-wrap: wrap;
+  }
+  .fr-person__main {
+    flex-basis: calc(100% - 70px);
+  }
+  .fr-person__act {
+    width: 100%;
+    justify-content: flex-start;
+  }
+  .fr-list--2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* request passes: boarding-pass tickets. Blocks: fr-pass(__main __top __name __fields __stub __label __bars __act __stamp) modifiers: --incoming --sent --accepted --gone */
+.fr-pass {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 184px;
+  overflow: hidden;
+  container-type: inline-size;
+  border: 2px solid var(--ink);
+  border-radius: 26px;
+  background: var(--card);
+  transition:
+    transform 0.25s,
+    box-shadow 0.25s,
+    opacity 0.3s;
+}
+.fr-pass::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 20px;
+  background: var(--clay);
+}
+.fr-pass:hover {
+  transform: translate(-4px, -4px) rotate(-0.4deg);
+  box-shadow: 8px 8px 0 var(--ink);
+}
+.fr-pass__main {
+  position: relative;
+  display: grid;
+  gap: 14px;
+  align-content: start;
+  padding: 22px 24px 24px 46px;
+}
+.fr-pass__top {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font: 500 11px var(--mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--mute);
+}
+.fr-pass__name {
+  font-size: clamp(20px, 6.2cqi, 42px);
+  overflow-wrap: anywhere;
+}
+.fr-pass__fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 18px;
+  margin: 0;
+}
+.fr-pass__fields dt {
+  font: 500 10px var(--mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--mute);
+}
+.fr-pass__fields dd {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 3px 0 0;
+  font: 500 14px/1.25 var(--mono);
+  text-transform: uppercase;
+}
+.fr-pass__stub {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  align-content: space-between;
+  gap: 12px;
+  padding: 20px 16px;
+  border-left: 2px dashed #15130f55;
+}
+.fr-pass__stub::before,
+.fr-pass__stub::after {
+  content: "";
+  position: absolute;
+  left: -15px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid var(--ink);
+  background: var(--chalk);
+}
+.fr-pass__stub::before {
+  top: -15px;
+}
+.fr-pass__stub::after {
+  bottom: -15px;
+}
+.fr-pass__label {
+  font: 500 11px var(--mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--mute);
+}
+.fr-pass .av {
+  width: 64px;
+  height: 64px;
+  font-size: 28px;
+}
+.fr-pass__bars {
+  width: 100%;
+  height: 34px;
+  fill: var(--ink);
+}
+.fr-pass__act {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+}
+.fr-pass__act .btn {
+  justify-content: center;
+  width: 100%;
+}
+.fr-pass__stamp {
+  position: absolute;
+  padding: 6px 14px;
+  border: 3px solid;
+  border-radius: 10px;
+  font: 700 13px var(--mono);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+.fr-pass__stamp--wait {
+  top: 54px;
+  right: 18px;
+  color: var(--clay);
+  transform: rotate(-9deg);
+  opacity: 0.85;
+}
+.fr-pass__stamp--ok {
+  top: 50%;
+  left: calc((100% - 184px) / 2);
+  opacity: 0;
+  font-size: 24px;
+  color: var(--ink);
+  background: var(--ball);
+  transform: translate(-50%, -50%) scale(2.6) rotate(-20deg);
+}
+.fr-pass--sent {
+  background: transparent;
+  border-style: dashed;
+}
+.fr-pass--sent::before {
+  background: repeating-linear-gradient(
+    135deg,
+    var(--ink) 0 6px,
+    transparent 6px 12px
+  );
+  opacity: 0.3;
+}
+.fr-pass--accepted .fr-pass__main {
+  opacity: 0.3;
+  transition: opacity 0.3s;
+}
+.fr-pass--accepted .fr-pass__stamp--ok {
+  animation: fr-stamp 0.5s cubic-bezier(0.2, 1.5, 0.4, 1) forwards;
+}
+.fr-pass.fr-pass--gone {
+  opacity: 0;
+  transform: translateX(48px) rotate(3deg);
+  pointer-events: none;
+}
+@keyframes fr-stamp {
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1) rotate(-10deg);
+  }
+}
+@media (max-width: 560px) {
+  .fr-pass {
+    grid-template-columns: 1fr;
+  }
+  .fr-pass__stub {
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    border-left: 0;
+    border-top: 2px dashed #15130f55;
+  }
+  .fr-pass__label,
+  .fr-pass__bars,
+  .fr-pass__act {
+    grid-column: 1/-1;
+  }
+  .fr-pass__stub::before {
+    top: -15px;
+    left: -15px;
+  }
+  .fr-pass__stub::after {
+    top: -15px;
+    bottom: auto;
+    left: auto;
+    right: -15px;
+  }
+  .fr-pass__stamp--ok {
+    left: 50%;
+    top: 38%;
+  }
+}
+
+/* React integration: scoped states, real-data feedback and accessible controls. */
+.fr {
+  padding-top: 40px;
+  padding-bottom: 80px;
+}
+.fr ul {
+  list-style: none;
+  padding: 0;
+}
+.fr-error {
+  padding: 18px;
+  border: 2px solid var(--clay);
+  border-radius: 20px;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  align-items: center;
+}
+.fr-status {
+  font: 500 13px var(--mono);
+  color: var(--court);
+}
+.fr-status:empty {
+  display: none;
+}
+.fr-pid {
+  overflow-wrap: anywhere;
+}
+.fr-id__row {
+  position: relative;
+  z-index: 1;
+}
+.fr-id__code {
+  user-select: all;
+}
+.fr-id__code--legacy {
+  font-size: clamp(16px, 2vw, 23px);
+}
+.fr-avatar {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 48px;
+  height: 48px;
+  border: 2px solid var(--ink);
+  border-radius: 50%;
+  font: 700 20px var(--sans);
+  background: var(--ball);
+  color: var(--ink);
+}
+.fr-card .fr-avatar,
+.fr-pass .fr-avatar {
+  width: 68px;
+  height: 68px;
+  font-size: 30px;
+}
+.fr-person__av {
+  display: flex;
+}
+.fr button:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+.fr-card__x {
+  opacity: 0.65;
+}
+.fr-pass__main {
+  min-width: 0;
+}
+.fr-pass__fields dd {
+  overflow-wrap: anywhere;
+}
+.fr-pass__fields .fr-id--legacy {
+  font-size: 10px;
+}
+.fr-pid--legacy {
+  font-size: 9px;
+  letter-spacing: 0;
+}
+.fr-person__name {
+  overflow-wrap: anywhere;
+}
+.fr-search__input:focus-visible {
+  outline: none;
+}
+.fr-search__box:has(input:focus-visible) {
+  outline: 3px solid var(--clay);
+  outline-offset: 3px;
+}
+.fr-pass__stamp--wait {
+  position: static;
+  justify-self: start;
+}
+@media (prefers-reduced-motion: reduce) {
+  .fr-card,
+  .fr-person,
+  .fr-pass {
+    transition: none;
+  }
+  .fr-card:hover,
+  .fr-person:hover,
+  .fr-pass:hover {
+    transform: none;
+  }
+  .fr-pass--accepted .fr-pass__stamp--ok {
+    animation: none;
+    opacity: 1;
+    transform: translate(-50%, -50%) rotate(-10deg);
+  }
+}
+
+/* Requests stay bounded to one received and one sent ticket. */
+.fr-request-stacks {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 32px;
+}
+.fr-stat__skeleton {
+  display: block;
+  width: 1.15em;
+  height: 0.85em;
+  border-radius: 6px;
+  background: currentColor;
+  opacity: 0.16;
+}

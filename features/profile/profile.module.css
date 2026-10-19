@@ -1,0 +1,7 @@
+.page {
+  padding-bottom: 100px;
+}
+.page section[aria-label="Your matches"] {
+  display: grid;
+  gap: 18px;
+}

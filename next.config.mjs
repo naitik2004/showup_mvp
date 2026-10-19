@@ -1,12 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  async redirects() {
+    return [
+      { source: '/profile/friends', destination: '/friends', permanent: false },
+    ];
+  },
   async rewrites() {
-    return {
-      // Keep the app preview available while its screens move into React.
-      beforeFiles: [
-        { source: '/app.html', destination: '/showup/app.html' },
-      ],
-    };
+    return { beforeFiles: [{ source: '/app.html', destination: '/showup/app.html' }] };
   },
 };
 

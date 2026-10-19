@@ -2,7 +2,9 @@ import type { Metadata } from 'next';
 import './globals.css';
 import './showup-reference.css';
 import '@/public/showup/css/brand-motion.css';
-import { Toaster } from '@/components/ui/sonner';
+import '@/public/showup/css/app-header.css';
+import '@/public/showup/css/app-notifications.css';
+import AppToaster from '@/features/notifications/components/AppToaster';
 import AppShell from '@/components/AppShell';
 
 export const metadata: Metadata = {
@@ -26,7 +28,7 @@ export default function RootLayout({
       <body className="antialiased min-h-screen">
         <AppShell>
           {children}
-          <Toaster theme="dark" position="top-center" closeButton richColors />
+          <AppToaster />
         </AppShell>
       </body>
     </html>

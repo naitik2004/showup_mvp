@@ -5,7 +5,7 @@ export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get('code');
   const next = requestUrl.searchParams.get('next');
-  const destination = next?.startsWith('/') && !next.startsWith('//') ? next : '/';
+  const destination = next?.startsWith('/') && !next.startsWith('//') ? next : '/app.html';
 
   if (code) {
     const supabase = createClient();
