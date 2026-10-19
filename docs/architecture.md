@@ -3,12 +3,15 @@
 ## Current routes
 
 - `/`: native Next.js marketing page, composed by `app/page.tsx`.
-- `/app.html`: original standalone application preview, served through a rewrite
-  to `public/showup/app.html`. It still uses browser-local accounts and sample
-  match/social data. It is not the production application backend.
-- Existing `/login`, `/profile`, `/map`, `/groups/*`, and social routes: older
-  Next.js implementation. Authentication uses Supabase; many other flows still
-  use `lib/mock-data.tsx`. They are not yet the replacement for the app preview.
+- `/app.html`: the original supplied Home page, served from `public/showup/app.html` through a rewrite. Its approved appearance and animations are preserved. It still uses the existing browser-local preview data.
+- `/friends`, `/invites`, and `/profile`: separate React features in `features/friends`, `features/invites`, and `features/profile`, using Supabase.
+- `/login`, `/callback`, and `/groups/*`: existing Supabase authentication and match pages.
+- All React app pages share the app header. Home links, app logos, main page headings, and post-login fallback return to `/app.html`. The prelaunch page remains `/`.
+- `public/showup/js/app-navigation.js` is the small navigation boundary for old Home hash links. Friends, Invites, Profile, Host, and Sign in open their separate React pages. No new feature implementation lives in the legacy script.
+- The alternative `components/home/ShowUpHome.tsx` is not wired to `/app.html`; do not substitute it for the approved original design. A future React Home migration must preserve the exact supplied appearance.
+- `lib/navigation.ts` centralizes destinations for React components. No React page uses `MockDataProvider`.
+
+The remaining audit notes below record the earlier migration stages; the route list above describes the current implementation.
 
 ## Marketing structure
 

@@ -1,0 +1,24 @@
+/* Shared application navigation: Home, Friends, Invites and Profile. */
+.bar.app-header { backdrop-filter: none; }
+.bar.app-header .wrap { display: flex; align-items: center; gap: 14px; height: 68px; }
+.bar.app-header .logo { flex: none; font-size: 26px; }
+.bar.app-header #nv {
+  position: static; transform: none; display: flex; flex: 1;
+  justify-content: center; gap: 4px; margin: 0 auto;
+}
+.bar.app-header #nv a { padding: 8px 16px; font-size: 14px; }
+.bar.app-header > .wrap > .btn { flex: none; white-space: nowrap; margin: 0; padding: 11px 22px; font-size: 15px; }
+@media (min-width: 761px) and (max-width: 1050px) {
+  .bar.app-header #nv a { padding-inline: 12px; }
+}
+@media (max-width: 760px) {
+  .bar.app-header .wrap { gap: 10px; }
+  .bar.app-header .logo { font-size: 22px; }
+  .bar.app-header #nv {
+    position: fixed; top: auto; left: 12px; right: 12px;
+    bottom: max(12px, env(safe-area-inset-bottom)); transform: none;
+    flex: none; justify-content: space-around; padding: 6px;
+  }
+  .bar.app-header #nv a { padding: 9px 12px; font-size: 13px; }
+  .bar.app-header > .wrap > .btn { margin-left: auto; padding: 9px 16px; font-size: 14px; }
+}

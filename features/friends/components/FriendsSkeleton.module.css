@@ -1,0 +1,118 @@
+.root {
+  width: 100%;
+}
+.top {
+  display: grid;
+  grid-template-columns: 1.55fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+.card {
+  display: grid;
+  gap: 20px;
+  padding: clamp(20px, 3vw, 36px);
+  border: 2px solid #15130f25;
+  border-radius: 28px;
+  min-height: 220px;
+}
+.identity {
+  background: #12392b0b;
+}
+.block {
+  border-radius: 8px;
+  background: linear-gradient(
+    100deg,
+    #15130f0c 20%,
+    #15130f17 40%,
+    #15130f0c 60%
+  );
+  background-size: 220% 100%;
+  animation: shimmer 1.5s linear infinite;
+}
+.label {
+  width: 35%;
+  height: 14px;
+}
+.input {
+  width: 100%;
+  height: 60px;
+  border-radius: 99px;
+}
+.line {
+  width: 85%;
+  height: 16px;
+}
+.code {
+  width: 75%;
+  height: 42px;
+}
+.button {
+  width: 130px;
+  height: 35px;
+  border-radius: 99px;
+}
+.heading {
+  width: 45%;
+  max-width: 420px;
+  height: 46px;
+  margin: 64px 0 28px;
+}
+.requests {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 32px;
+}
+.ticket {
+  display: grid;
+  grid-template-columns: 1fr 30%;
+  min-height: 320px;
+  border: 2px solid #15130f25;
+  border-radius: 26px;
+  overflow: hidden;
+}
+.ticketMain {
+  display: grid;
+  gap: 20px;
+  align-content: center;
+  padding: 26px;
+}
+.name {
+  width: 80%;
+  height: 60px;
+}
+.stub {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 30px;
+  border-left: 2px dashed #15130f25;
+  padding: 18px;
+}
+.stub .button {
+  width: 100%;
+}
+.avatar {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+}
+@keyframes shimmer {
+  to {
+    background-position: -220% 0;
+  }
+}
+@media (max-width: 900px) {
+  .top {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 700px) {
+  .heading {
+    width: 75%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .block {
+    animation: none;
+  }
+}

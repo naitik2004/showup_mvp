@@ -55,7 +55,7 @@ export async function updateSession(request: NextRequest) {
   if (user && (path === '/login' || path === '/signin')) {
     const destination = request.nextUrl.searchParams.get('next');
     const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = destination?.startsWith('/') && !destination.startsWith('//') ? destination : '/';
+    redirectUrl.pathname = destination?.startsWith('/') && !destination.startsWith('//') ? destination : '/app.html';
     redirectUrl.search = '';
     return NextResponse.redirect(redirectUrl);
   }

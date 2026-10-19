@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
+import { notifyNavigationChanged } from '@/lib/navigation-events';
 import { createClient } from '@/lib/supabase/client';
 import { User, Sport } from '@/types';
 
@@ -59,7 +61,7 @@ export function useAuth() {
 
   const signUp = async (name: string, emailAddress: string, password: string, city: string) => {
     const requestedNext = new URLSearchParams(window.location.search).get('next');
-    const safeNext = requestedNext?.startsWith('/') && !requestedNext.startsWith('//') ? requestedNext : '/';
+    const safeNext = requestedNext?.startsWith('/') && !requestedNext.startsWith('//') ? requestedNext : '/app.html';
     const { data, error } = await supabase.auth.signUp({
       email: emailAddress,
       password,
@@ -83,6 +85,8 @@ export function useAuth() {
     if (error) throw error;
     setUser(null);
     setEmail(null);
+    notifyNavigationChanged();
+    toast.success('Signed out.');
     router.push('/login');
     router.refresh();
   };
@@ -93,8 +97,9 @@ export function useAuth() {
     const { data, error } = await supabase.from('profiles').update({
       name, city, preferred_sports: preferredSports, onboarded: true,
     }).eq('id', authUser.id).select('*').single();
-    if (error) return { data: null, error };
+    if (error) { toast.error(error.message); return { data: null, error }; }
     setUser(data as User);
+    toast.success('Profile updated.');
     return { data: data as User, error: null };
   };
 

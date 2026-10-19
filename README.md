@@ -42,11 +42,7 @@ The prelaunch homepage at `/` is a native React page. Start with
 Styles live in `components/prelaunch/Prelaunch.module.css` and are scoped to
 this page. The original HTML reference is in `docs/references/prelaunch.html`.
 
-“Open the app” goes to `/app.html`, which still serves the standalone preview
-from `public/showup/`. Preview accounts and data remain in browser localStorage
-(`showup.v1`); they are not real Supabase accounts. The demo login shortcut is
-removed. The marketing sample board is illustrative and the waitlist does not
-save emails yet.
+“Open the app” goes to `/app.html`, preserving the original supplied Home page and animations. Friends (`/friends`), Invites (`/invites`), and Profile (`/profile`) are separate structured React features. Their Home links, logos, and headings return to `/app.html`. The original Home still uses its existing preview data; the separate React features use Supabase.
 
 See [architecture and migration](docs/architecture.md) for file responsibilities,
 route behavior, and the remaining backend work. Follow `AGENTS.md` when editing.

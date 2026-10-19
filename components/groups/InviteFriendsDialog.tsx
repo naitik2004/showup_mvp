@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
+import { notifyNavigationChanged } from '@/lib/navigation-events';
 
 type FriendInvite = { id: string; name: string; invited: boolean };
 
@@ -61,6 +62,7 @@ export default function InviteFriendsDialog({ gameId, onCopyLink }: { gameId: st
     else {
       setFriends((current) => current.map((item) => item.id === friend.id ? { ...item, invited: true } : item));
       toast.success(`Invite sent to ${friend.name}.`);
+      notifyNavigationChanged();
     }
     setBusyId('');
   };

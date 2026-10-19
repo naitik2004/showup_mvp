@@ -44,7 +44,7 @@ export default function LoginPage() {
         return;
       }
       const next = new URLSearchParams(window.location.search).get('next');
-      const destination = next?.startsWith('/') && !next.startsWith('//') ? next : '/';
+      const destination = next?.startsWith('/') && !next.startsWith('//') ? next : '/app.html';
       router.replace(destination);
       router.refresh();
     } catch (cause: any) {
@@ -68,7 +68,7 @@ export default function LoginPage() {
           {notice && <p className="sy" role="status">{notice}</p>}
           <button className="btn hot" type="submit" disabled={submitting}>{submitting ? 'Please wait…' : tab === 'up' ? 'Create account' : 'Sign in'}</button>
           <p className="mono">By continuing you agree to ShowUp&apos;s terms.</p>
-          <Link className="btn gh" href="/">Back to games</Link>
+          <Link className="btn gh" href="/app.html">Back to games</Link>
         </form>
       </div>
     </main>

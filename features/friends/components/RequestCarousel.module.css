@@ -1,0 +1,128 @@
+.carousel {
+  min-width: 0;
+}
+.heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.heading h3 {
+  font: 800 20px/1.2 var(--sans);
+  text-transform: none;
+  letter-spacing: -0.02em;
+}
+.heading h3 span {
+  color: var(--mute);
+  font-size: 15px;
+}
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+}
+.controls button {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1.5px solid var(--ink);
+  border-radius: 50%;
+  background: var(--card);
+  font-size: 20px;
+  line-height: 1;
+}
+.controls button:hover:not(:disabled) {
+  background: var(--ball);
+}
+.controls button:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+.counter {
+  min-width: 42px;
+  text-align: center;
+  font: 500 12px var(--mono);
+}
+.viewport {
+  overflow: hidden;
+  padding: 10px;
+  margin: -10px;
+  touch-action: pan-y;
+  cursor: grab;
+  user-select: none;
+  border-radius: 30px;
+}
+.viewport:active {
+  cursor: grabbing;
+}
+.slide {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  animation: enterNext 0.22s ease-out;
+}
+.slide > li {
+  min-height: 320px;
+}
+.previous {
+  animation-name: enterPrevious;
+}
+.hint {
+  margin-top: 14px;
+  font: 400 11px/1.5 var(--mono);
+  color: var(--mute);
+}
+.empty {
+  min-height: 320px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 14px;
+  padding: 28px;
+  border: 2px dashed #15130f55;
+  border-radius: 26px;
+  color: var(--mute);
+}
+.empty > span {
+  font-size: 36px;
+}
+.empty h4 {
+  color: var(--ink);
+  font: 800 20px/1.2 var(--sans);
+}
+.empty p {
+  max-width: 30ch;
+  font-size: 14px;
+  line-height: 1.6;
+}
+@keyframes enterNext {
+  from {
+    opacity: 0.3;
+    transform: translateX(32px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+@keyframes enterPrevious {
+  from {
+    opacity: 0.3;
+    transform: translateX(-32px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .slide {
+    animation: none;
+  }
+}
