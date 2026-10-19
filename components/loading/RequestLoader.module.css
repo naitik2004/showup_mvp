@@ -1,0 +1,28 @@
+.overlay{position:fixed;inset:0;width:100%;height:100%;max-width:none;max-height:none;margin:0;padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0);border:0;display:grid;place-items:center;background:#f3efe4ee;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);color:#15130f;--ink:#15130f;--court:#12392b;--clay:#d9532b;--mute:#6f6a5e;--sans:Archivo,system-ui,sans-serif;--mono:"DM Mono",monospace;--ser:"Instrument Serif",Georgia,serif;opacity:1;z-index:10000}
+
+
+.overlay .box{display:flex;flex-direction:column;align-items:center;gap:26px;text-align:center;padding:24px}
+.overlay .tbl{position:relative;width:264px;height:104px;border:2px solid var(--ink);border-radius:999px;background:var(--court);box-shadow:5px 5px 0 var(--ink);overflow:hidden}
+.overlay .tbl::before{content:'';position:absolute;left:50%;top:8px;bottom:8px;border-left:2px solid #f3efe433}
+.overlay .tbl::after{content:'';position:absolute;inset:8px;border:2px solid #f3efe433;border-radius:999px}
+.overlay .bl{--w:56px;position:absolute;top:22px;left:20px;width:var(--w);height:var(--w)}
+.overlay .bl b{position:absolute;left:12%;right:12%;bottom:-9px;height:7px;border-radius:50%;background:#000;opacity:.35}
+.overlay .bl svg{position:absolute;inset:0;width:100%;height:100%;display:block;transform-origin:50% 100%;filter:drop-shadow(0 2px 0 #0003)}
+.overlay .bl.a{animation:sA 2.4s cubic-bezier(.6,0,.3,1) infinite}.overlay .bl.a svg{animation:hA 2.4s ease-in-out infinite}
+.overlay .bl.b{animation:sB 2.4s cubic-bezier(.6,0,.3,1) infinite}.overlay .bl.b svg{animation:hB 2.4s ease-in-out infinite}
+.overlay .bl.c{animation:sC 2.4s cubic-bezier(.6,0,.3,1) infinite}.overlay .bl.c svg{animation:hC 2.4s ease-in-out infinite}
+.overlay .bl.b svg{filter:drop-shadow(0 2px 0 #0003) hue-rotate(0deg)}
+/* slots: 0 / 92px / 184px. three balls, four swaps, returns to start */
+@keyframes sA{0%,4%{translate:0 0}21%,29%{translate:92px 0}46%,54%{translate:184px 0}71%,100%{translate:0 0}}
+@keyframes sB{0%,4%{translate:92px 0}21%,50%{translate:0 0}71%,79%{translate:184px 0}96%,100%{translate:92px 0}}
+@keyframes sC{0%,29%{translate:184px 0}46%,54%{translate:92px 0}71%,79%{translate:92px 0}96%,100%{translate:184px 0}}
+/* hops: the ball travelling "over" arcs high, its partner dips low */
+@keyframes hA{0%,4%{transform:none}12.5%{transform:translateY(-34px) rotate(180deg)}21%,29%{transform:none}37.5%{transform:translateY(-34px) rotate(360deg)}46%,54%{transform:none}62.5%{transform:translateY(1px) scale(.86) rotate(540deg)}71%,100%{transform:rotate(540deg)}}
+@keyframes hB{0%,4%{transform:none}12.5%{transform:translateY(1px) scale(.86)}21%,54%{transform:none}62.5%{transform:translateY(-34px) rotate(180deg)}71%,79%{transform:rotate(180deg)}87.5%{transform:translateY(-34px) rotate(360deg)}96%,100%{transform:rotate(360deg)}}
+@keyframes hC{0%,29%{transform:none}37.5%{transform:translateY(1px) scale(.86)}46%,79%{transform:none}87.5%{transform:translateY(1px) scale(.86)}96%,100%{transform:none}}
+.overlay .lt{font:900 clamp(26px,5vw,38px)/.95 var(--sans);font-stretch:125%;text-transform:uppercase;letter-spacing:-.035em}
+.overlay .lt i{font:italic 400 1.15em var(--ser);text-transform:none;letter-spacing:-.01em;font-stretch:100%;color:var(--clay)}
+.overlay .ls{font:500 12px var(--mono);letter-spacing:.14em;color:var(--mute);text-transform:uppercase;min-height:1.5em}
+.overlay .ls::after{content:'';display:inline-block;width:1.4em;text-align:left;animation:dots 1.2s steps(4) infinite}
+@keyframes dots{0%{content:''}25%{content:'.'}50%{content:'..'}75%{content:'...'}}
+@media (prefers-reduced-motion:reduce){.overlay .bl,.overlay .bl svg,.overlay .ls::after{animation:none!important}.overlay .bl.b{translate:92px 0}.overlay .bl.c{translate:184px 0}}
