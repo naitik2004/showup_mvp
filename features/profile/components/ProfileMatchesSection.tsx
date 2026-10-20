@@ -1,9 +1,12 @@
+import HostedMatchActions from "./HostedMatchActions";
+import styles from "../profile.module.css";
 import Link from "next/link";
 import { APP_ROUTES } from "@/lib/navigation";
 import { Match } from "@/lib/matches";
 import { SPORTS } from "@/types";
 import { ProfileTab } from "../hooks/useProfileDashboard";
 export default function ProfileMatchesSection({
+  viewerId,
   tab,
   onTabChange,
   matches,
@@ -11,6 +14,7 @@ export default function ProfileMatchesSection({
   error,
   onRetry,
 }: {
+  viewerId?: string;
   tab: ProfileTab;
   onTabChange: (tab: ProfileTab) => void;
   matches: Match[];
@@ -47,8 +51,9 @@ export default function ProfileMatchesSection({
       ) : matches.length ? (
         <div className="lst">
           {matches.map((game) => (
-            <Link href={`/groups/${game.id}`} key={game.id} className="card">
-              <span className={`pl ${game.status}`}>{game.status}</span>
+            <article key={game.id} className={`card ${styles.matchCard}`}>
+              <span className={`pl ${game.status} ${styles.matchStatus}`}>{game.status}</span>
+              <Link href={`/groups/${game.id}`} className={styles.matchDetails}>
               <h3>
                 {SPORTS.find((sport) => sport.id === game.sport)?.emoji}{" "}
                 {game.title ||
@@ -59,7 +64,9 @@ export default function ProfileMatchesSection({
               <span className="mono">
                 {game.member_count} of {game.max_players} players
               </span>
-            </Link>
+              </Link>
+              {game.host_id === viewerId && <HostedMatchActions match={game} onSaved={onRetry} />}
+            </article>
           ))}
         </div>
       ) : (

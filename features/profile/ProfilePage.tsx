@@ -24,6 +24,7 @@ export default function ProfilePage() {
           error={profile.error}
         />
         <ProfileMatchesSection
+          viewerId={profile.viewerId}
           tab={profile.tab}
           onTabChange={profile.setTab}
           matches={profile.shown}
