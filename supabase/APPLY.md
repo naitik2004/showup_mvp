@@ -180,3 +180,7 @@ Email auth was already enabled; no provider settings were changed. Required
 Realtime tables were verified. Frontend changes have not been pushed or deployed;
 the deployed website needs the matching client release for the new RPC/grant
 contract. The updated local app remains running at localhost:3000.
+
+## Hosted match management (021)
+Apply `021_hosted_match_management.sql` after 020. This adds host-only edit and recoverable delete (cancellation) RPCs; no existing rows are rewritten. Editing locks the match against concurrent joins, validates future dates and capacity, and recalculates open/full status. Deletion retains memberships and chat. Test `supabase/tests/hosted_match_management.sql` only in the isolated fixture database.
+Verify `to_regprocedure('public.update_hosted_game(uuid,text,text,timestamp with time zone,integer,text)')` and `to_regprocedure('public.delete_hosted_game(uuid)')` are non-null.

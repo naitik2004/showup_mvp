@@ -797,6 +797,8 @@ export type Database = {
       }
     }
     Functions: {
+      update_hosted_game: { Args: { p_game_id: string; p_title: string; p_venue: string; p_starts_at: string; p_max_players: number; p_notes: string }; Returns: undefined }
+      delete_hosted_game: { Args: { p_game_id: string }; Returns: undefined }
       _postgis_deprecate: {
         Args: { newname: string; oldname: string; version: string }
         Returns: undefined

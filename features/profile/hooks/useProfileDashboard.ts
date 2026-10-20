@@ -35,10 +35,11 @@ export function useProfileDashboard() {
     tab === "Past"
       ? past
       : (tab === "Hosting" ? hosted : joined).filter(
-          (game) => game.status !== "done",
+          (game) => !["done", "cancelled"].includes(game.status),
         );
   return {
     user: auth.user,
+    viewerId: auth.sessionUser?.id,
     signOut: auth.signOut,
     loading: auth.loading || groups.loading,
     error: groups.error || statsError,
