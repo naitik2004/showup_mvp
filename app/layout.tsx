@@ -6,6 +6,9 @@ import '@/public/showup/css/app-header.css';
 import '@/public/showup/css/app-notifications.css';
 import AppToaster from '@/features/notifications/components/AppToaster';
 import AppShell from '@/components/AppShell';
+import { fetchNavigationSummary } from '@/features/navigation/data/navigationRepository';
+
+export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: 'ShowUp — Sports Social Platform',
@@ -13,11 +16,12 @@ export const metadata: Metadata = {
   manifest: '/manifest.json',
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
   }: Readonly<{
     children: React.ReactNode;
   }>) {
+  const initialNavigation = await fetchNavigationSummary().catch(() => null);
   return (
     <html lang="en">
       <head>
@@ -26,7 +30,7 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=DM+Mono:wght@400;500&family=Instrument+Serif:ital@1&display=swap" rel="stylesheet" />
       </head>
       <body className="antialiased min-h-screen">
-        <AppShell>
+        <AppShell initialNavigation={initialNavigation}>
           {children}
         </AppShell>
         <AppToaster />

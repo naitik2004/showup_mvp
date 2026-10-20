@@ -1,18 +1,33 @@
 /* Shared application navigation: Home, Friends, Invites and Profile. */
-.bar.app-header { backdrop-filter: none; }
-.bar.app-header .wrap { display: flex; align-items: center; gap: 14px; height: 68px; }
-.bar.app-header .logo { flex: none; font-size: 26px; }
+/* Keep the viewport identical on short and long pages; nested scrollbars remain. */
+html { scrollbar-width: none; }
+html::-webkit-scrollbar { display: none; }
+.bar.app-header {
+  backdrop-filter: none;
+  font-feature-settings: normal;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+.bar.app-header .wrap {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  height: 68px;
+}
+.bar.app-header .logo { justify-self: start; font-size: 26px; }
 .bar.app-header #nv {
-  position: static; transform: none; display: flex; flex: 1;
+  position: static; transform: none; display: flex;
   justify-content: center; gap: 4px; margin: 0 auto;
 }
 .bar.app-header #nv a { padding: 8px 16px; font-size: 14px; }
-.bar.app-header > .wrap > .btn { flex: none; white-space: nowrap; margin: 0; padding: 11px 22px; font-size: 15px; }
+.bar.app-header > .wrap > .btn { justify-self: end; white-space: nowrap; margin: 0; padding: 11px 22px; font-size: 15px; }
 @media (min-width: 761px) and (max-width: 1050px) {
   .bar.app-header #nv a { padding-inline: 12px; }
 }
 @media (max-width: 760px) {
-  .bar.app-header .wrap { gap: 10px; }
+  .bar.app-header .wrap { grid-template-columns: 1fr auto; gap: 10px; }
   .bar.app-header .logo { font-size: 22px; }
   .bar.app-header #nv {
     position: fixed; top: auto; left: 12px; right: 12px;
