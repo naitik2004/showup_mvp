@@ -1,13 +1,15 @@
 "use client";
 
 import Link from "next/link";
+import type { NavigationSummary } from "@/features/navigation/types";
 import { usePathname } from "next/navigation";
 import { useNavigationSummary } from "@/features/navigation/hooks/useNavigationSummary";
 import { APP_ROUTES } from "@/lib/navigation";
 
-export default function ShowUpHeader() {
+export default function ShowUpHeader({ initialSummary }: { initialSummary: NavigationSummary | null }) {
   const pathname = usePathname();
-  const { authenticated, friendRequests, invites } = useNavigationSummary();
+  const summary = useNavigationSummary(initialSummary);
+  const { authenticated, friendRequests, invites } = summary || { authenticated: false, friendRequests: 0, invites: 0 };
 
   const active = (href: string) => pathname === href;
   const hostHref = authenticated ? "/groups/create" : "/login";
@@ -79,9 +81,13 @@ export default function ShowUpHeader() {
               ),
             )}
           </nav>
-          <Link className="btn" href={hostHref}>
-            {authenticated ? "+ Host a game" : "Sign in"}
-          </Link>
+          {summary ? (
+            <Link className="btn" href={hostHref}>
+              {authenticated ? "+ Host a game" : "Sign in"}
+            </Link>
+          ) : (
+            <span className="btn" aria-disabled="true">Loading account…</span>
+          )}
         </div>
       </header>
     </>

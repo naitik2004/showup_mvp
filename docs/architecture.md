@@ -12,7 +12,7 @@ for the inspection, backup, ordered application and verification steps.
 ## Current routes
 
 - `/`: native Next.js marketing page, composed by `app/page.tsx`.
-- `/app.html`: the original supplied Home page, served from `public/showup/app.html` through a rewrite. Its approved appearance and animations are preserved. It still uses the existing browser-local preview data.
+- `/app.html`: the original supplied Home page, served from `public/showup/app.html` by the private `/app.html` route handler with a verified account snapshot. Its approved appearance and animations are preserved. It still uses the existing browser-local preview data.
 - `/friends`, `/invites`, and `/profile`: separate React features in `features/friends`, `features/invites`, and `features/profile`, using Supabase.
 - `/login`, `/callback`, and `/groups/*`: existing Supabase authentication and match pages.
 - All React app pages share the app header. Home links, app logos, main page headings, and post-login fallback return to `/app.html`. The prelaunch page remains `/`.

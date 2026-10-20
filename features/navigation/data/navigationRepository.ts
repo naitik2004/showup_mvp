@@ -1,7 +1,8 @@
+import type { NavigationSummary } from "../types";
 import { createClient } from "@/lib/supabase/server";
 
 /** Only pending items addressed to the signed-in player need attention. */
-export async function fetchNavigationSummary() {
+export async function fetchNavigationSummary(): Promise<NavigationSummary> {
   const client = createClient();
   const { data: { user }, error } = await client.auth.getUser();
   if (!user) {

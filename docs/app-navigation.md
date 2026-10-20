@@ -9,7 +9,7 @@ Routing and page extraction checked on 19 October 2026:
 - Thirteen pure compatibility-route checks cover native anchors, legacy sections, UUID match links, and unknown hash names.
 No invite was accepted/declined and no account was signed out during these read-only navigation checks.
 
-Correction: the user requested restoring the original supplied Home after the alternative React Home was substituted. `/app.html` again rewrites to `public/showup/app.html`; separate React social pages and app Home destinations remain. The earlier no-legacy-script/shared-Home-auth checks describe the reverted alternative, not the restored preview.
+Correction: the user requested restoring the original supplied Home after the alternative React Home was substituted. `/app.html` again serves the original `public/showup/app.html` design (now through a private route handler); separate React social pages and app Home destinations remain. The earlier no-legacy-script/shared-Home-auth checks describe the reverted alternative, not the restored preview.
 
 ### Shared header and account counters
 
@@ -52,3 +52,34 @@ The Home greeting reads the first part of the authenticated player's
 browser-local preview name. Guest and missing-profile responses leave the name
 blank, and the adapter inserts profile text with `textContent`. Profile saves
 refresh the navigation summary across open tabs.
+
+### Account state on first paint
+
+The Next.js layout passes a verified navigation summary into the header before
+it renders. `/app.html` is now a private, uncached Next.js route handler that
+serves the preserved Home document with the same verified summary as JSON data.
+The Home adapter reads it synchronously before rendering the greeting. It does
+not wait for an additional browser fetch to learn whether the player is signed
+in. Neither path stores identity in local/session storage.
+
+Background refresh errors retain the last verified state. If a first request
+cannot verify the account, the action says “Loading account…” rather than
+claiming the player is signed out. Confirmed sign-out clears the native header
+and invalidates older pending responses. Backend authorization is unchanged.
+
+Regression check: `node tests/navigation-initial-render.cjs`.
+
+### Header alignment
+
+`public/showup/css/app-header.css` is shared by Home and the React pages. Its
+three-column desktop grid keeps navigation centered, with the logo and account
+action aligned to opposite edges. Mobile uses two columns with the existing
+bottom navigation. Font rendering is normalized inside the header. The viewport
+scrollbar is visually hidden on both document types to prevent the scrollbar
+gutter from changing their available width; scrolling and nested scrollbars
+remain available.
+
+Measured all header elements on `/app.html`, `/friends`, `/invites`, `/profile`
+at 1040×1034 and 390×844: their bounding rectangles matched exactly at each
+viewport, with no horizontal overflow. Verified scrolling with the sticky header
+remaining at top zero. Measurement artifact: `/tmp/showup-header-measurements.json`.

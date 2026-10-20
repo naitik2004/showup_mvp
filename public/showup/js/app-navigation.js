@@ -23,7 +23,8 @@
 /* Home consumes the same authenticated endpoint as the React header. */
 (() => {
   let generation = 0;
-  let summary = null;
+  const bootstrap = document.getElementById('showup-account-bootstrap');
+  let summary = bootstrap ? JSON.parse(bootstrap.textContent) : null;
   const render = () => {
     for (const [id, count] of [['b1', summary?.friendRequests], ['b2', summary?.invites]]) {
       const badge = document.getElementById(id);
@@ -46,8 +47,14 @@
       ? `${summary.invites} pending game ${summary.invites === 1 ? 'invite' : 'invites'} for you.`
       : 'Pick one and show up.';
     const action = document.getElementById('hb');
-    action.textContent = summary?.authenticated ? '+ Host a game' : 'Sign in';
-    action.href = summary?.authenticated ? '/groups/create' : '/login?next=%2Fapp.html';
+    action.textContent = summary === null ? 'Loading account…' : summary.authenticated ? '+ Host a game' : 'Sign in';
+    if (summary === null) {
+      action.removeAttribute('href');
+      action.setAttribute('aria-disabled', 'true');
+    } else {
+      action.href = summary.authenticated ? '/groups/create' : '/login?next=%2Fapp.html';
+      action.removeAttribute('aria-disabled');
+    }
   };
   const refresh = async () => {
     const request = ++generation;
@@ -59,7 +66,7 @@
       summary = next;
     } catch {
       if (request !== generation) return;
-      summary = null;
+      // Retain verified display state while the connection is unavailable.
     }
     render();
   };
