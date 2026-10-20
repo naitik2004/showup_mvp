@@ -99,6 +99,7 @@ export function useAuth() {
     }).eq('id', authUser.id).select('id,name,city,avatar_url,preferred_sports,onboarded,created_at,player_id').single();
     if (error) { toast.error(error.message); return { data: null, error }; }
     setUser(data as User);
+    notifyNavigationChanged();
     toast.success('Profile updated.');
     return { data: data as User, error: null };
   };

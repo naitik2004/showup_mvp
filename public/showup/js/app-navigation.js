@@ -33,6 +33,14 @@
       const count = summary?.[counter.dataset.accountCount];
       counter.textContent = summary ? String(count || 0).padStart(2, '0') : '--';
     });
+    const greeting = document.querySelector('[data-account-greeting]');
+    if (greeting) {
+      const name = summary?.authenticated ? summary.greetingName : null;
+      greeting.textContent = name ? `,\n${name}` : '';
+      greeting.hidden = !name;
+      const heading = greeting.closest('[data-greeting]');
+      heading.setAttribute('aria-label', `${heading.dataset.greeting}${name ? `, ${name}` : ''}`);
+    }
     const inviteSummary = document.querySelector('[data-invite-summary]');
     if (inviteSummary) inviteSummary.textContent = summary?.invites > 0
       ? `${summary.invites} pending game ${summary.invites === 1 ? 'invite' : 'invites'} for you.`

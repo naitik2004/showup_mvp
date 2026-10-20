@@ -44,3 +44,11 @@ including the marketing root, show the same idle pill between notifications.
 On mobile the pill sits above the bottom navigation. Popups dismiss after 2.8 seconds; pending header badges
 remain until the server no longer reports an item as pending. These badges count
 friend requests and game invites, not chat messages.
+
+### Signed-in Home greeting
+
+The Home greeting reads the first part of the authenticated player's
+`profiles.name` through the private navigation endpoint. It no longer reads a
+browser-local preview name. Guest and missing-profile responses leave the name
+blank, and the adapter inserts profile text with `textContent`. Profile saves
+refresh the navigation summary across open tabs.

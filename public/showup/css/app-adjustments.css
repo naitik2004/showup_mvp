@@ -3,3 +3,8 @@
   position: relative;
   top: -4px;
 }
+
+/* Keep the signed-in name on the original greeting's second line. */
+.account-greeting {
+  white-space: pre-line;
+}
